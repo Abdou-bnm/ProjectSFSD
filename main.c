@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 // The declaration of the header of a file
 typedef struct fileHeader{
@@ -33,6 +34,7 @@ typedef struct IndexElement{
     char *key;
     block *blockAddress;
     char *endAddress;
+    bool isDeletedLogically;
 }IndexElement;                  
 
 // Global variables
