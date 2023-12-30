@@ -38,9 +38,9 @@ bool searchElement(){
     //     fprintf(stderr, "ERROR! [malloc in searchElement]: Couldn't allocate memory")
     //      exit(EXIT_FAILURE);
     // }
-    // key = strncpy(key, buffer.tab, KEY_MAX_SIZE);
+    // key = strncpy(key, buffer, KEY_MAX_SIZE);
     if(indexSize == 0)                  return false;
-    return __recuSearch(0, indexSize - 1, buffer.tab);
+    return __recuSearch(0, indexSize - 1, buffer);
 }
 
 void createFile(file* file){
@@ -71,9 +71,9 @@ int main(int argc, char const *argv[]){
         goto end;
 
     do{
-        memset(&buffer, sizeof(buffer), 0);                 // Clear the buffer for future uses.
+        memset(buffer, sizeof(buffer), 0);                 // Clear the buffer for future uses.
 
-        printf("Enter what you want to do in numbers\n");
+        printf("\n\nEnter what you want to do in numbers\n");
         printf("1- Insert an element\n");
         printf("2- Delete an element\n");
         printf("3- Search for an element\n");
@@ -92,7 +92,7 @@ int main(int argc, char const *argv[]){
 
         case 3:
             printf("Enter the key to search (Keys does NOT contain spaces) and a maximum size of %d: ", KEY_MAX_SIZE - 1);
-            scanf("%16s", buffer.tab);
+            scanf("%16s", buffer);
             if( searchElement())
                 printf("Element exists.\n");
             else
