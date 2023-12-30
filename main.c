@@ -101,16 +101,17 @@ int DeleteStructurePhysique(file* file){
     }
     else
     {
+        int FreeSpace = 0;
         char* EndCurrentStructurePosition,NewStructurePosition;
-        indexElementDeleted = searchElement();
+        int indexElementDeleted = searchElement();
         char *NewStructurePosition = index[indexElementDeleted].key;
         block *blockAddressRecover = index[indexElementDeleted].blockAddress;
         for(int i=indexElementDeleted + 1 ; i<indexSize ; i++)
         {
-            if(Index[i].blockAddress <> index[i-1].blockAddress)
+            if(Index[i].blockAddress <> Index[i-1].blockAddress)
             {
-                FreeSpace = ((index[i-1].blockAddress)->header).EndAddresse - NewStructurePosition;
-                if(CalculateSpace(index[i].key,index[i].endAddress) == FreeSpace)
+                FreeSpace = ((Index[i-1].blockAddress)->header).EndAddresse - NewStructurePosition;
+                if(CalculateSpace(Index[i].key,Index[i].endAddress) == FreeSpace)
                 {   
                     EndCurrentStructurePosition = Index[i].endAddress;
                     StartCurrentStructurePosition = Index[i].key;
@@ -127,13 +128,11 @@ int DeleteStructurePhysique(file* file){
             else
             {
                 EndCurrentStructurePosition = Index[i].endAddress;
-                StartCurrentStructurePosition = index.[i].key;
+                StartCurrentStructurePosition = Index.[i].key;
                 StructureShift(NewStructurePosition,StartCurrentStructurePosition,EndCurrentStructurePosition);
             }
-
-            blockAddressRecover = index[i].blockAddress;
+            blockAddressRecover = Index[i].blockAddress;
         }
-
         UpdateIndexDelete(indexElementDeleted);
     }
 
