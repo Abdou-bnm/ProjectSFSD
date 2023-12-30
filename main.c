@@ -40,7 +40,7 @@ bool searchElement(){
     // }
     // key = strncpy(key, buffer.tab, KEY_MAX_SIZE);
     if(indexSize == 0)                  return false;
-    return __recuSearch(0, indexSize - 1, buffer.tab);
+    return __recuSearch(0, indexSize - 1, buffer);
 }
 
 void createFile(file* file){
@@ -70,7 +70,7 @@ void ElementShift(char* NewElementPosition,char* StartCurrentElementPosition,cha
 {
     //Shift the Element to New position
     while(StartCurrentElementPosition != EndCurrentElementPosition){
-    {
+    
         *NewElementPosition = *StartCurrentElementPosition;
         *StartCurrentElementPosition = "\0";
         NewElementPosition += sizeof(char);
@@ -109,9 +109,9 @@ int DeleteElementPhysique(file* file){
         block* blockAddressRecover = Index[indexElementDeleted].blockAddress;
         for(int i=indexElementDeleted + 1 ; i<indexSize ; i++)
         {
-            if(Index[i].blockAddress <> Index[i-1].blockAddress) // To verify if the Shift Will be in the Same Block or not
+            if(Index[i].blockAddress != Index[i-1].blockAddress) // To verify if the Shift Will be in the Same Block or not
             {
-                FreeSpace = ((Index[i-1].blockAddress)->header).EndAddresse - NewElementPosition; // The Remaining Free Space in the Bloc
+                FreeSpace = ((Index[i-1].blockAddress)->header).EndAddress - NewElementPosition; // The Remaining Free Space in the Bloc
                 if(CalculateSpace(Index[i].key,Index[i].endAddress) == FreeSpace)
                 {   
                     EndCurrentElementPosition = Index[i].endAddress;
@@ -129,7 +129,7 @@ int DeleteElementPhysique(file* file){
             else
             {
                 EndCurrentElementPosition = Index[i].endAddress;
-                StartCurrentElementPosition = Index.[i].key;
+                StartCurrentElementPosition = Index[i].key;
                 ElementShift(NewElementPosition,StartCurrentElementPosition,EndCurrentElementPosition);
             }
             blockAddressRecover = Index[i].blockAddress;
@@ -176,7 +176,7 @@ int main(int argc, char const *argv[]){
 
         case 3:
             printf("Enter the key to search (Keys does NOT contain spaces) and a maximum size of %d: ", KEY_MAX_SIZE - 1);
-            scanf("%16s", buffer.tab);
+            scanf("%16s", buffer);
             if( searchElement())
                 printf("Element exists.\n");
             else
