@@ -40,7 +40,7 @@ bool searchElement(){
     // }
     // key = strncpy(key, buffer.tab, KEY_MAX_SIZE);
     if(indexSize == 0)                  return false;
-    return __recuSearch(0, indexSize - 1, buffer.tab);
+    return __recuSearch(0, indexSize - 1, buffer);
 }
 
 void createFile(file* file){
@@ -55,6 +55,90 @@ void createFile(file* file){
     printf("Enter the name of the file (max size is 35 characters, spaces NOT allowed): ");
     scanf("%36s", file->header.name);
 }
+
+void DeleteElementLogique(){
+    if(searchElement() == -1){
+        return -1;
+    }
+    else
+    {
+        Index[searchElement()].isDeletedLogically = true;
+    }
+}
+
+void ElementShift(char* NewElementPosition,char* StartCurrentElementPosition,char* EndCurrentElementPosition)
+{
+    //Shift the Element to New position
+    while(StartCurrentElementPosition != EndCurrentElementPosition){
+    
+        *NewElementPosition = *StartCurrentElementPosition;
+        *StartCurrentElementPosition = "\0";
+        NewElementPosition += sizeof(char);
+        StartCurrentElementPosition += sizeof(char);
+    }
+    NewElementPosition += 2*sizeof(char);
+}
+
+int CalculateSpace(char *StartEspaceAddress, char *EndEspaceAddress){
+    return EndEspaceAddress - StartEspaceAddress; 
+}
+
+void UpdateIndexDelete(int IndexElementDeleted){
+    for (int ElementIndex = IndexElementDeleted; ElementIndex < indexSize ; ElementIndex++)
+    {
+        Index[ElementIndex].key = Index[ElementIndex+1].key;                          
+        Index[ElementIndex].blockAddress = Index[ElementIndex+1].blockAddress;
+        Index[ElementIndex].endAddress = Index[ElementIndex+1].endAddress;                
+        Index[ElementIndex].isDeletedLogically = Index[ElementIndex+1].isDeletedLogically;
+    }
+
+    indexSize -- ;
+}
+
+
+int DeleteElementPhysique(file* file){
+    if(searchElement() == -1){
+        return -1;
+    }
+    else
+    {
+        int FreeSpace = 0;
+        char* EndCurrentElementPosition,StartCurrentElementPosition;
+        int indexElementDeleted = searchElement();
+        char *NewElementPosition = Index[indexElementDeleted].key;
+        block* blockAddressRecover = Index[indexElementDeleted].blockAddress;
+        for(int i=indexElementDeleted + 1 ; i<indexSize ; i++)
+        {
+            if(Index[i].blockAddress != Index[i-1].blockAddress) // To verify if the Shift Will be in the Same Block or not
+            {
+                FreeSpace = ((Index[i-1].blockAddress)->header).EndAddress - NewElementPosition; // The Remaining Free Space in the Bloc
+                if(CalculateSpace(Index[i].key,Index[i].endAddress) == FreeSpace)
+                {   
+                    EndCurrentElementPosition = Index[i].endAddress;
+                    StartCurrentElementPosition = Index[i].key;
+                    ElementShift(NewElementPosition,StartCurrentElementPosition,EndCurrentElementPosition);
+                }
+                else
+                {
+                    NewElementPosition = blockAddressRecover->tab;
+                    EndCurrentElementPosition = Index[i].endAddress;
+                    StartCurrentElementPosition = Index[i].key;
+                    ElementShift(NewElementPosition,StartCurrentElementPosition,EndCurrentElementPosition);
+                }             
+            }
+            else
+            {
+                EndCurrentElementPosition = Index[i].endAddress;
+                StartCurrentElementPosition = Index[i].key;
+                ElementShift(NewElementPosition,StartCurrentElementPosition,EndCurrentElementPosition);
+            }
+            blockAddressRecover = Index[i].blockAddress;
+        }
+        UpdateIndexDelete(indexElementDeleted);
+    }
+
+}
+
 
 int main(int argc, char const *argv[]){
     unsigned short answer;                                  // Used to get user's answers
@@ -92,7 +176,7 @@ int main(int argc, char const *argv[]){
 
         case 3:
             printf("Enter the key to search (Keys does NOT contain spaces) and a maximum size of %d: ", KEY_MAX_SIZE - 1);
-            scanf("%16s", buffer.tab);
+            scanf("%16s", buffer);
             if( searchElement())
                 printf("Element exists.\n");
             else
