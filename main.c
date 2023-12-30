@@ -56,6 +56,22 @@ void createFile(file* file){
     scanf("%36s", file->header.name);
 }
 
+void DeleteStructureLogique(){
+    
+}
+
+void DeleteStructurePhysique(file* file){
+    if(!searchElement()){
+        printf("ERROR!");
+    }
+    else
+    {
+        
+    }
+
+}
+
+
 int main(int argc, char const *argv[]){
     unsigned short answer;                                  // Used to get user's answers
     file file;
