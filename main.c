@@ -57,16 +57,84 @@ void createFile(file* file){
 }
 
 void DeleteStructureLogique(){
-    
-}
-
-void DeleteStructurePhysique(file* file){
-    if(!searchElement()){
-        printf("ERROR!");
+    if(searchElement() == -1){
+        return -1;
     }
     else
     {
-        
+        Index[searchElement()].isDeletedLogically = true;
+    }
+}
+
+void StructureShift(char* NewStructurePosition,char* StartCurrentStructurePosition,char* EndCurrentStructurePosition)
+{
+    //Shift the Structure to New position
+    while(StartCurrentStructurePosition != EndCurrentStructurePosition){
+    {
+        *NewStructurePosition = *StartCurrentStructurePosition;
+        *StartCurrentStructurePosition = "\0";
+        NewStructurePosition += sizeof(char);
+        StartCurrentStructurePosition += sizeof(char);
+    }
+}
+
+int CalculateSpace(char *StartEspaceAddress, char *EndEspaceAddress){
+    return EndEspaceAddress - StartEspaceAddress; 
+}
+
+void UpdateIndexDelete(int IndexElementDeleted){
+    for (int ElementIndex = IndexElementDeleted; ElementIndex < indexSize ; ElementIndex++)
+    {
+        Index[ElementIndex].key = Index[ElementIndex+1].key;                          
+        Index[ElementIndex].blockAddress = Index[ElementIndex+1].blockAddress;
+        Index[ElementIndex].endAddress = Index[ElementIndex+1].endAddress;                
+        Index[ElementIndex].isDeletedLogically = Index[ElementIndex+1].isDeletedLogically;
+    }
+
+    indexSize -- ;
+}
+
+
+int DeleteStructurePhysique(file* file){
+    if(searchElement() == -1){
+        return -1;
+    }
+    else
+    {
+        char* EndCurrentStructurePosition,NewStructurePosition;
+        indexElementDeleted = searchElement();
+        char *NewStructurePosition = index[indexElementDeleted].key;
+        block *blockAddressRecover = index[indexElementDeleted].blockAddress;
+        for(int i=indexElementDeleted + 1 ; i<indexSize ; i++)
+        {
+            if(Index[i].blockAddress <> index[i-1].blockAddress)
+            {
+                FreeSpace = ((index[i-1].blockAddress)->header).EndAddresse - NewStructurePosition;
+                if(CalculateSpace(index[i].key,index[i].endAddress) == FreeSpace)
+                {   
+                    EndCurrentStructurePosition = Index[i].endAddress;
+                    StartCurrentStructurePosition = Index[i].key;
+                    StructureShift(NewStructurePosition,StartCurrentStructurePosition,EndCurrentStructurePosition);
+                }
+                else
+                {
+                    NewStructurePosition = blockAddressRecover->tab;
+                    EndCurrentStructurePosition = Index[i].endAddress;
+                    StartCurrentStructurePosition = Index[i].key;
+                    StructureShift(NewStructurePosition,StartCurrentStructurePosition,EndCurrentStructurePosition);
+                }             
+            }
+            else
+            {
+                EndCurrentStructurePosition = Index[i].endAddress;
+                StartCurrentStructurePosition = index.[i].key;
+                StructureShift(NewStructurePosition,StartCurrentStructurePosition,EndCurrentStructurePosition);
+            }
+
+            blockAddressRecover = index[i].blockAddress;
+        }
+
+        UpdateIndexDelete(indexElementDeleted);
     }
 
 }

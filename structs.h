@@ -10,6 +10,9 @@ typedef struct fileHeader{
 typedef struct blockHeader{
     unsigned short NbStructs;  
     unsigned short usedSpace;
+    char* StartAddress;
+    char* EndAddress;
+    char* StartFreeSpaceAddress;
 }blockHeader;
 
 // The declaration of a single block in memory, which is capable of containing multiple structs.
@@ -33,14 +36,14 @@ typedef struct file{
 
 // The declaration of an element of the "index" array, which contains information needed for search, insertion, ...etc.
 typedef struct indexElement{        
-    char *key;
+    char *key;                              // Pointer to the first byte of the element.
     block *blockAddress;                    // Pointer to the block of the element.
     char *endAddress;                       // Pointer to the last byte of the element.
     bool isDeletedLogically;                // Whether the element is deleted logically or not. An element which is deleted logically will be ignored.
 }indexElement;                  
 
 // Global variables
-block buffer;                               // A buffer to transfer data between RAM and Memory (used for file manipulation operations).
+char buffer[50];                               // A buffer to transfer data between RAM and Memory (used for file manipulation operations).
 indexElement Index[36];                     // An index associated to the file containing useful information for various operations.
 unsigned short indexSize = 0;               // The index of the first free element in the index.
 block MS[16];                               // The Memory which will contain all the blocks of the linked list and other blocks used by default.
