@@ -76,6 +76,7 @@ void StructureShift(char* NewStructurePosition,char* StartCurrentStructurePositi
         NewStructurePosition += sizeof(char);
         StartCurrentStructurePosition += sizeof(char);
     }
+    NewStructurePosition += 2*sizeof(char);
 }
 
 int CalculateSpace(char *StartEspaceAddress, char *EndEspaceAddress){
@@ -104,8 +105,8 @@ int DeleteStructurePhysique(file* file){
         int FreeSpace = 0;
         char* EndCurrentStructurePosition,NewStructurePosition;
         int indexElementDeleted = searchElement();
-        char *NewStructurePosition = index[indexElementDeleted].key;
-        block *blockAddressRecover = index[indexElementDeleted].blockAddress;
+        char *NewStructurePosition = Index[indexElementDeleted].key;
+        block *blockAddressRecover = Index[indexElementDeleted].blockAddress;
         for(int i=indexElementDeleted + 1 ; i<indexSize ; i++)
         {
             if(Index[i].blockAddress <> Index[i-1].blockAddress)
