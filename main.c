@@ -14,7 +14,7 @@ block* allocBlock(){
     return NULL; 
 }
 
-bool __recuSearch(unsigned short startIndex, unsigned short endIndex, char* key){
+short __recuSearch(unsigned short startIndex, unsigned short endIndex, char* key){
     if(startIndex == endIndex)
         if(Index[startIndex].isDeletedLogically)
             return false;
@@ -66,17 +66,17 @@ void DeleteElementLogique(){
     }
 }
 
-void ElementShift(char* NewElementPosition,char* StartCurrentElementPosition,char* EndCurrentElementPosition)
+void ElementShift(char* NewElementPos,char* StartCurElementPos,char* EndCurElementPos)
 {
-    //Shift the Element to New position
-    while(StartCurrentElementPosition != EndCurrentElementPosition){
+    //Shift the Element to New Pos
+    while(StartCurElementPos != EndCurElementPos)
     {
-        *NewElementPosition = *StartCurrentElementPosition;
-        *StartCurrentElementPosition = "\0";
-        NewElementPosition += sizeof(char);
-        StartCurrentElementPosition += sizeof(char);
+        *NewElementPos = *StartCurElementPos;
+        *StartCurElementPos = 0;
+        NewElementPos += sizeof(char);
+        StartCurElementPos += sizeof(char);
     }
-    NewElementPosition += 2*sizeof(char);
+    NewElementPos += 2*sizeof(char);
 }
 
 int CalculateSpace(char *StartEspaceAddress, char *EndEspaceAddress){
@@ -95,46 +95,52 @@ void UpdateIndexDelete(int IndexElementDeleted){
     indexSize -- ;
 }
 
-
 int DeleteElementPhysique(file* file){
-    if(searchElement() == -1){
+    int indexElementDeleted = searchElement();
+    if(indexElementDeleted == -1){
         return -1;
     }
     else
     {
         int FreeSpace = 0;
-        char* EndCurrentElementPosition,StartCurrentElementPosition;
-        int indexElementDeleted = searchElement();
-        char *NewElementPosition = Index[indexElementDeleted].key;
+        char* EndCurElementPos,StartCurElementPos;
+        char *NewElementPos = Index[indexElementDeleted].key;
         block* blockAddressRecover = Index[indexElementDeleted].blockAddress;
         for(int i=indexElementDeleted + 1 ; i<indexSize ; i++)
         {
-            if(Index[i].blockAddress <> Index[i-1].blockAddress) // To verify if the Shift Will be in the Same Block or not
+            if(Index[i].blockAddress != Index[i-1].blockAddress) // To verify if the Shift Will be in the Same Block or not
             {
-                FreeSpace = ((Index[i-1].blockAddress)->header).EndAddresse - NewElementPosition; // The Remaining Free Space in the Bloc
-                if(CalculateSpace(Index[i].key,Index[i].endAddress) == FreeSpace)
+                FreeSpace = ((Index[i-1].blockAddress)->header).EndAddress - NewElementPos; // The Remaining Free Space in the Bloc
+                if(CalculateSpace(Index[i].key,Index[i].endAddress) <= FreeSpace) // Verify if FreeSpace is sufficient for the Element
                 {   
-                    EndCurrentElementPosition = Index[i].endAddress;
-                    StartCurrentElementPosition = Index[i].key;
-                    ElementShift(NewElementPosition,StartCurrentElementPosition,EndCurrentElementPosition);
+                    EndCurElementPos = Index[i].endAddress;
+                    StartCurElementPos = Index[i].key;
+                    ElementShift(NewElementPos,StartCurElementPos,EndCurElementPos);
                 }
-                else
+                else // FreeSpace is not sufficient => Make the Element in New Block
                 {
-                    NewElementPosition = blockAddressRecover->tab;
-                    EndCurrentElementPosition = Index[i].endAddress;
-                    StartCurrentElementPosition = Index[i].key;
-                    ElementShift(NewElementPosition,StartCurrentElementPosition,EndCurrentElementPosition);
+                    NewElementPos = blockAddressRecover->tab;
+                    EndCurElementPos = Index[i].endAddress;
+                    StartCurElementPos = Index[i].key;
+                    ElementShift(NewElementPos,StartCurElementPos,EndCurElementPos);
                 }             
             }
-            else
+            else 
             {
-                EndCurrentElementPosition = Index[i].endAddress;
-                StartCurrentElementPosition = Index.[i].key;
-                ElementShift(NewElementPosition,StartCurrentElementPosition,EndCurrentElementPosition);
+                EndCurElementPos = Index[i].endAddress;
+                StartCurElementPos = Index[i].key;
+                ElementShift(NewElementPos,StartCurElementPos,EndCurElementPos);
             }
             blockAddressRecover = Index[i].blockAddress;
         }
+
+        // Update IndexArray
         UpdateIndexDelete(indexElementDeleted);
+        // Update Last Bloc
+        if (*((Index[indexSize].blockAddress)->tab) == 0)
+        {
+            (Index[indexSize].blockAddress)->isUsed = false;
+        }
     }
 
 }
