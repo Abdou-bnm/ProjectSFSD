@@ -56,7 +56,7 @@ void createFile(file* file){
     scanf("%36s", file->header.name);
 }
 
-void DeleteStructureLogique(){
+void DeleteElementLogique(){
     if(searchElement() == -1){
         return -1;
     }
@@ -66,17 +66,17 @@ void DeleteStructureLogique(){
     }
 }
 
-void StructureShift(char* NewStructurePosition,char* StartCurrentStructurePosition,char* EndCurrentStructurePosition)
+void ElementShift(char* NewElementPosition,char* StartCurrentElementPosition,char* EndCurrentElementPosition)
 {
-    //Shift the Structure to New position
-    while(StartCurrentStructurePosition != EndCurrentStructurePosition){
+    //Shift the Element to New position
+    while(StartCurrentElementPosition != EndCurrentElementPosition){
     {
-        *NewStructurePosition = *StartCurrentStructurePosition;
-        *StartCurrentStructurePosition = "\0";
-        NewStructurePosition += sizeof(char);
-        StartCurrentStructurePosition += sizeof(char);
+        *NewElementPosition = *StartCurrentElementPosition;
+        *StartCurrentElementPosition = "\0";
+        NewElementPosition += sizeof(char);
+        StartCurrentElementPosition += sizeof(char);
     }
-    NewStructurePosition += 2*sizeof(char);
+    NewElementPosition += 2*sizeof(char);
 }
 
 int CalculateSpace(char *StartEspaceAddress, char *EndEspaceAddress){
@@ -96,41 +96,41 @@ void UpdateIndexDelete(int IndexElementDeleted){
 }
 
 
-int DeleteStructurePhysique(file* file){
+int DeleteElementPhysique(file* file){
     if(searchElement() == -1){
         return -1;
     }
     else
     {
         int FreeSpace = 0;
-        char* EndCurrentStructurePosition,NewStructurePosition;
+        char* EndCurrentElementPosition,StartCurrentElementPosition;
         int indexElementDeleted = searchElement();
-        char *NewStructurePosition = Index[indexElementDeleted].key;
-        block *blockAddressRecover = Index[indexElementDeleted].blockAddress;
+        char *NewElementPosition = Index[indexElementDeleted].key;
+        block* blockAddressRecover = Index[indexElementDeleted].blockAddress;
         for(int i=indexElementDeleted + 1 ; i<indexSize ; i++)
         {
-            if(Index[i].blockAddress <> Index[i-1].blockAddress)
+            if(Index[i].blockAddress <> Index[i-1].blockAddress) // To verify if the Shift Will be in the Same Block or not
             {
-                FreeSpace = ((Index[i-1].blockAddress)->header).EndAddresse - NewStructurePosition;
+                FreeSpace = ((Index[i-1].blockAddress)->header).EndAddresse - NewElementPosition; // The Remaining Free Space in the Bloc
                 if(CalculateSpace(Index[i].key,Index[i].endAddress) == FreeSpace)
                 {   
-                    EndCurrentStructurePosition = Index[i].endAddress;
-                    StartCurrentStructurePosition = Index[i].key;
-                    StructureShift(NewStructurePosition,StartCurrentStructurePosition,EndCurrentStructurePosition);
+                    EndCurrentElementPosition = Index[i].endAddress;
+                    StartCurrentElementPosition = Index[i].key;
+                    ElementShift(NewElementPosition,StartCurrentElementPosition,EndCurrentElementPosition);
                 }
                 else
                 {
-                    NewStructurePosition = blockAddressRecover->tab;
-                    EndCurrentStructurePosition = Index[i].endAddress;
-                    StartCurrentStructurePosition = Index[i].key;
-                    StructureShift(NewStructurePosition,StartCurrentStructurePosition,EndCurrentStructurePosition);
+                    NewElementPosition = blockAddressRecover->tab;
+                    EndCurrentElementPosition = Index[i].endAddress;
+                    StartCurrentElementPosition = Index[i].key;
+                    ElementShift(NewElementPosition,StartCurrentElementPosition,EndCurrentElementPosition);
                 }             
             }
             else
             {
-                EndCurrentStructurePosition = Index[i].endAddress;
-                StartCurrentStructurePosition = Index.[i].key;
-                StructureShift(NewStructurePosition,StartCurrentStructurePosition,EndCurrentStructurePosition);
+                EndCurrentElementPosition = Index[i].endAddress;
+                StartCurrentElementPosition = Index.[i].key;
+                ElementShift(NewElementPosition,StartCurrentElementPosition,EndCurrentElementPosition);
             }
             blockAddressRecover = Index[i].blockAddress;
         }
