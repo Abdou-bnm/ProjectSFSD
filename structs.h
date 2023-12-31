@@ -1,3 +1,8 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
+
 #define KEY_MAX_SIZE 16
 
 // The declaration of the header of a file.
