@@ -43,7 +43,7 @@ typedef struct indexElement{
 }indexElement;                  
 
 // Global variables
-char buffer[50];                               // A buffer to transfer data between RAM and Memory (used for file manipulation operations).
+char buffer[50];                            // A buffer to transfer data between RAM and Memory (used for file manipulation operations).
 indexElement Index[36];                     // An index associated to the file containing useful information for various operations.
 unsigned short indexSize = 0;               // The index of the first free element in the index.
 block MS[16];                               // The Memory which will contain all the blocks of the linked list and other blocks used by default.
