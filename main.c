@@ -89,13 +89,14 @@ void UpdateIndexDelete(int IndexElementDeleted){
 
 // Function to delete an element from the file (Logical)
 void DeleteElementLogique(){
-    if(searchElement() == -1){
+    short indexElement = searchElement();
+    if(indexElement == -1){
         printf("\nERROR! [Searching for Element]:already deleted or not Existe ");
         return -1;
     }
     else
     {
-        Index.tab[searchElement()].isDeletedLogically = true;
+        Index.tab[indexElement].isDeletedLogically = true;
     }
 }
 
