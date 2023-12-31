@@ -74,10 +74,7 @@ int CalculateSpace(char *StartEspaceAddress, char *EndEspaceAddress){
 void UpdateIndexDelete(int IndexElementDeleted){
     for (int ElementIndex = IndexElementDeleted; ElementIndex < Index.indexSize ; ElementIndex++)
     {
-        Index.tab[ElementIndex].key = Index.tab[ElementIndex+1].key;                          
-        Index.tab[ElementIndex].blockAddress = Index.tab[ElementIndex+1].blockAddress;
-        Index.tab[ElementIndex].endAddress = Index.tab[ElementIndex+1].endAddress;                
-        Index.tab[ElementIndex].isDeletedLogically = Index.tab[ElementIndex+1].isDeletedLogically;
+        Index.tab[ElementIndex] = Index.tab[ElementIndex+1];                         
     }
 
     Index.indexSize -- ;
@@ -123,13 +120,13 @@ int DeleteElementPhysique(file* file){
         int FreeSpace = 0;
         char* EndCurElementPos,StartCurElementPos;
         char *NewElementPos = Index.tab[indexElementDeleted].key;
-        block* blockAddressRecover = Index.tab[indexElementDeleted].blockAddress;
+        block* blockAddressdataRecover = (Index.tab[indexElementDeleted].blockAddress)->data;
         for(int i=indexElementDeleted + 1 ; i<Index.indexSize ; i++)
         {
             // Verify if the Shift Will be in the Same Block or not
-            if(Index.tab[i].blockAddress != Index.tab[i-1].blockAddress) // Shift the element into a different block
+            if((Index.tab[i].blockAddress)->data != (Index.tab[i-1].blockAddress)->data) // Shift the element into a different block
             {
-                FreeSpace = ((Index.tab[i-1].blockAddress)->header).EndAddress - NewElementPos; // Calculate the remaining free space in the block
+                FreeSpace = (((Index.tab[i-1].blockAddress)->data)->header).EndAddress - NewElementPos; // Calculate the remaining free space in the block
                 // Verify if FreeSpace is sufficient for the Element
                 if(CalculateSpace(Index.tab[i].key,Index.tab[i].endAddress) <= FreeSpace) // FreeSpace is sufficient => Make the Element in the FreeSpace
                 {   
@@ -140,10 +137,10 @@ int DeleteElementPhysique(file* file){
                 }
                 else // FreeSpace isn't sufficient => Make the Element in New Block
                 {
-                    ((Index.tab[i-1].blockAddress)->header).NbStructs += NbElement; //Update Number of Element in Current Block
-                    ((Index.tab[i].blockAddress)->header).NbStructs -= NbElement+1; //Update Number of Element in New Block
+                    (((Index.tab[i-1].blockAddress)->data)->header).NbStructs += NbElement; //Update Number of Element in Current Block
+                    (((Index.tab[i].blockAddress)->data)->header).NbStructs -= NbElement+1; //Update Number of Element in New Block
                     NbElement= 0; 
-                    NewElementPos = blockAddressRecover->tab;
+                    NewElementPos = blockAddressdataRecover->tab;
                     EndCurElementPos = Index.tab[i].endAddress;
                     StartCurElementPos = Index.tab[i].key;
                     ElementShift(NewElementPos,StartCurElementPos,EndCurElementPos);
@@ -156,16 +153,16 @@ int DeleteElementPhysique(file* file){
                 ElementShift(NewElementPos,StartCurElementPos,EndCurElementPos);
             }
             // Update the block address for the next iteration
-            blockAddressRecover = Index.tab[i].blockAddress;
+            blockAddressdataRecover = (Index.tab[i].blockAddress)->data;
         }
 
         // Update IndexArray to reflect the deletion
         UpdateIndexDelete(indexElementDeleted);
 
         // Update Last Block
-        if (((Index.tab[Index.indexSize].blockAddress)->header.NbStructs) == 0)
+        if ((((Index.tab[Index.indexSize].blockAddress)->data)->header).NbStructs == 0)
         {
-            (Index.tab[Index.indexSize].blockAddress)->isUsed = false;
+            ((Index.tab[Index.indexSize].blockAddress)->data)->isUsed = false;
         }
 
         // Update nb Element in file header

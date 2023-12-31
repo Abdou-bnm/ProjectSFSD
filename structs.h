@@ -42,7 +42,7 @@ typedef struct file{
 // The declaration of an element of the "index" array, which contains information needed for search, insertion, ...etc.
 typedef struct indexElement{        
     char *key;                              // Pointer to the first byte of the element.
-    block *blockAddress;                    // Pointer to the block of the element.
+    fBlock *blockAddress;                    // Pointer to the block of the element.
     char *endAddress;                       // Pointer to the last byte of the element.
     bool isDeletedLogically;                // Whether the element is deleted logically or not. An element which is deleted logically will be ignored.
 }indexElement;                  
