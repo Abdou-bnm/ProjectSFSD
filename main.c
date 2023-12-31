@@ -87,6 +87,16 @@ void UpdateIndexDelete(int IndexElementDeleted){
     Index.indexSize -- ;
 }
 
+// Function to update File
+void UpdateFileStruct(file* file)
+{
+    fBlock *ftmp = (*file).head ; 
+    while((ftmp)->next != NULL)
+    {
+        ftmp = ftmp->next;
+    }
+}
+
 // Function to delete an element from the file (Logical)
 void DeleteElementLogique(){
     short indexElement = searchElement();
@@ -160,8 +170,10 @@ int DeleteElementPhysique(file* file){
         if (((Index.tab[Index.indexSize].blockAddress)->header.NbStructs) == 0)
         {
             (Index.tab[Index.indexSize].blockAddress)->isUsed = false;
-            file->header.NbStructs--;
         }
+
+        // Update nb Element in file header
+        file->header.NbStructs--;
 
         printf("\nElement Deleted!");
     }
