@@ -17,37 +17,23 @@ block* allocBlock(){
 }
 
 
-fBlock *insertion(char TabKey[KEY_MAX_SIZE],int SizeTabKey){
-int SizeBuffer=strlen(buffer);//pour avoir la taille des reste des champs
+fBlock *insertion(char TabKey[KEY_MAX_SIZE],int SizeTabKey,int SizeTabRest){
+
+int SizeTabRest=strlen(buffer);//pour avoir la taille des reste des champs
 char TabKeyIndex[KEY_MAX_SIZE];
 File.head->data=allocBlock(); //creer le premier block
 fBlock *PtrF=File.head;//initialiser un ptr sur le block courrent 
 PtrF->next=NULL;
- 
- 
- //mettre la cle + les champs + les "\0"dans une chaine 
-char Enregistrement[BUFFER_MAX_SIZE];//pour stocker l enegistrement en entier
- //commencer par la cle 
-for(int i=0;i<SizeTabKey;i++){
-    Enregistrement[i]=TabKey[i];
-}
-Enregistrement[SizeTabKey]='\0';
-//puis le reste des champs        
-for(int i=SizeTabKey+1;i<SizeBuffer;i++){
-    Enregistrement[i]=TabKey[i];
-}   
-Enregistrement[SizeBuffer]='\0';
-Enregistrement[SizeBuffer+1]='\0';
 
 //COMMENCER L'INSERTION
 if (Index.IndexSize==0){
     //mettre le header a jour
     PtrF->data->header.NbStructs=1;
-    PtrF->data->header.usedSpace=SizeBuffer+SizeTabKey+3;
+    PtrF->data->header.usedSpace=SizeTabRest+SizeTabKey+3;
    
-    //mettre lenregistrement dans le tableau du block 
-    for(int i=0;i<SizeBuffer+SizeTabKey+3;i++)
-        PtrF->data->tab[i]=Enregistrement[i];
+    //mettre lbuffer dans le tableau du block 
+    for(int i=0;i<SizeTabRest+SizeTabKey+3;i++)
+        PtrF->data->tab[i]=buffer[i];
    
     //the block is used, deja fait en haut mais bon
     PtrF->data->isUsed=1;
@@ -82,21 +68,21 @@ else {
         }
     }
     if(j>=Index.IndexSize){
-       if(BUFFER_MAX_SIZE - PtrF->data->header.usedSpace >= SizeTabKey+SizeBuffer+3){
+       if(BUFFER_MAX_SIZE - PtrF->data->header.usedSpace >= SizeTabKey+SizeTabRest+3){
    
            //inserer dans l'indexe
-            Index.tab[j].key=(Index.tab[j-1].endAddress + SizeBuffer + 4); //supposant que EndAderess se trouve au niveau du dernier caractere de la cle(+3 pour les 3 "\0" +1 pour se positionner sur la nouvelle case)
+            Index.tab[j].key=(Index.tab[j-1].endAddress + SizeTabRest + 4); //supposant que EndAderess se trouve au niveau du dernier caractere de la cle(+3 pour les 3 "\0" +1 pour se positionner sur la nouvelle case)
             Index.tab[j].endAddress=(Index.tab[j].key + SizeTabKey ); 
             Index.tab[j].blockAddress=PtrF->data;
             Index.tab[j].isDeletedLogically=0;
    
             //inserer dans le bloc
-            //placer la chaine(stockée en haut dans la chaine enregistrement) dans le bloc
+            //placer la chaine(stockée en haut dans la chaine buffer) dans le bloc
             PtrStart=Index.tab[j].key;
             PtrEnd=Index.tab[j].endAddress;
             i=0;
             while(PtrStart!=PtrEnd){
-                *PtrStart=Enregistrement[i];
+                *PtrStart=buffer[i];
                 i++;
                 PtrStart++;
             }
@@ -114,14 +100,14 @@ else {
             Index.tab[j].isDeletedLogically=0;
    
             //inserer dans le bloc
-            //placer la chaine(stockée en haut dans la chaine enregistrement) dans le bloc
+            //placer la chaine(stockée en haut dans la chaine buffer) dans le bloc
             //placer la chaine dans le bloc
             //a revoir
             PtrStart=Index.tab[j].key;
             PtrEnd=Index.tab[j].endAddress;
             i=0;
             while(PtrStart!=PtrEnd){
-                *PtrStart=Enregistrement[i];
+                *PtrStart=buffer[i];
                 i++;
                 PtrStart++;
             }  
@@ -130,11 +116,11 @@ else {
     else{
         //traitement a l'interieur du block
         fBlock *Q =Index.tab[j].blockAddress ;//pointeur de parcour sur les blocks(il commence par le block du 1er element superieur)
-        if(BUFFER_MAX_SIZE - PtrF->data->header.usedSpace < SizeBuffer +SizeTabKey +3){
+        if(BUFFER_MAX_SIZE - PtrF->data->header.usedSpace < SizeTabRest +SizeTabKey +3){
             PtrF->next=allocBlock();
             PtrF=PtrF->next;
             PtrF->data->header.NbStructs=1;//je ne suis pas sure que ca soit 1??
-            PtrF->data->header.usedSpace=SizeBuffer +SizeTabKey +3; //pas sure aussi
+            PtrF->data->header.usedSpace=SizeTabRest +SizeTabKey +3; //pas sure aussi
         }
         fBlock *P=PtrF,*R=Q;
         char *Qtab=&(Index.tab[j].key),*Ptab=Qtab + Q->data->header.usedSpace;
@@ -154,8 +140,8 @@ else {
             Ptab=Ptab-1;
         }
         //insertion dans le bloc
-        for(int i=0;i< SizeBuffer +SizeTabKey +3;i++){
-            *(Qtab+i)=Enregistrement[i];
+        for(int i=0;i< SizeTabRest +SizeTabKey +3;i++){
+            *(Qtab+i)=buffer[i];
         }
     
         //traitement de l'indexe
