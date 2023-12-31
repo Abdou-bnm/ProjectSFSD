@@ -1,3 +1,8 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
+
 #define KEY_MAX_SIZE 16
 
 // The declaration of the header of a file.
@@ -8,8 +13,11 @@ typedef struct fileHeader{
 
 // The declaration of the header of a block.
 typedef struct blockHeader{
-    unsigned short NbStructs;  
+    unsigned short NbStructs;
     unsigned short usedSpace;
+    char* StartAddress;
+    char* EndAddress;
+    char* StartFreeSpaceAddress;
 }blockHeader;
 
 // The declaration of a single block in memory, which is capable of containing multiple structs.
@@ -22,7 +30,7 @@ typedef struct block{
 // The declaration of a single block in memory when used by a the file declared below.
 typedef struct fBlock{
     block* data;                             // The actual block struct in memory.
-    block* next;                            // A pointer to the next element (block) in the linked list.
+    struct fBlock* next;                            // A pointer to the next element (block) in the linked list.
 }fBlock;
 
 // The declaration of the file, which will be a sorted linked list, with variable size and no overlap (chevauchement).
@@ -37,10 +45,14 @@ typedef struct indexElement{
     block *blockAddress;                    // Pointer to the block of the element.
     char *endAddress;                       // Pointer to the last byte of the element.
     bool isDeletedLogically;                // Whether the element is deleted logically or not. An element which is deleted logically will be ignored.
-}indexElement;                  
+}indexElement;
+
+typedef struct IndexType{
+    indexElement tab[36];                   // An array of elements that are indexed under this key.
+    unsigned short indexSize;               // The index of the first free element in the index.
+}IndexType;
 
 // Global variables
-char buffer[50];                               // A buffer to transfer data between RAM and Memory (used for file manipulation operations).
-indexElement Index[36];                     // An index associated to the file containing useful information for various operations.
-unsigned short indexSize = 0;               // The index of the first free element in the index.
+char buffer[50];                            // A buffer to transfer data between RAM and Memory (used for file manipulation operations).
+IndexType Index[36];                        // An index associated to the file containing useful information for various operations.
 block MS[16];                               // The Memory which will contain all the blocks of the linked list and other blocks used by default.
