@@ -73,9 +73,7 @@ int CalculateSpace(char *StartEspaceAddress, char *EndEspaceAddress){
 // Function to update index array (Delete Element)
 void UpdateIndexDelete(int IndexElementDeleted){
     for (int ElementIndex = IndexElementDeleted; ElementIndex < Index.indexSize ; ElementIndex++)
-    {
-        Index.tab[ElementIndex] = Index.tab[ElementIndex+1];                         
-    }
+        Index.tab[ElementIndex] = Index.tab[ElementIndex+1];
 
     Index.indexSize -- ;
 }
