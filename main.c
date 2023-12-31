@@ -58,7 +58,6 @@ void createFile(file* file){
 
 fBlock *insertion(file File,char TabKey[KEY_MAX_SIZE],int SizeTabKey,int SizeTabRest){
 
-int SizeTabRest=strlen(buffer);//pour avoir la taille des reste des champs
 char TabKeyIndex[KEY_MAX_SIZE];
 File.head->data=allocBlock(); //creer le premier block
 fBlock *PtrF=File.head;//initialiser un ptr sur le block courrent 
@@ -95,7 +94,7 @@ else {
         PtrStart++;
     }
 
-    while(j<Index.IndexSize && strcmpn(TabKeyIndex,TabKey,16)<0){
+    while(j<Index.IndexSize && strncmp(TabKeyIndex,TabKey,16)<0){
         j++;
         PtrStart=Index.tab[j].key;
         PtrEnd=Index.tab[j].endAddress;
