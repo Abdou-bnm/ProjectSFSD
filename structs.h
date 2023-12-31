@@ -43,6 +43,7 @@ typedef struct indexElement{
 }indexElement;                  
 
 typedef struct IndexType{
+<<<<<<< HEAD
     indexElement tab[36]; 
     unsigned short IndexSize;  
 }IndexType;
@@ -53,3 +54,14 @@ indexElement Index[36];                     // An index associated to the file c
 unsigned short indexSize = 0;               // The index of the first free element in the index.
 block MS[16];                               // The Memory which will contain all the blocks of the linked list and other blocks used by default.
 
+=======
+    indexElement tab[36];                // An array of elements that are indexed under this key.
+    unsigned short indexSize;
+}IndexType;
+// Global variables
+char buffer[50];                            // A buffer to transfer data between RAM and Memory (used for file manipulation operations).
+// indexElement Index[36];                     // An index associated to the file containing useful information for various operations.
+// unsigned short indexSize = 0;               // The index of the first free element in the index.
+IndexType Index;
+block MS[16];                               // The Memory which will contain all the blocks of the linked list and other blocks used by default.
+>>>>>>> d94bd9fb2bd3bc0a6d7c59b350f9c07ea5889f04
