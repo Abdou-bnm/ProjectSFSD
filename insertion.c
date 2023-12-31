@@ -17,20 +17,7 @@ block* allocBlock(){
 }
 
 
-void createFile(file* file){
-    file->head = (fBlock*)malloc(sizeof(fBlock));
-    file->head->data = allocBlock();
-    if(file->head->data == NULL){
-        fprintf(stderr, "\nERROR! [allocBlock in createFile]: No space to allocate block.\nExiting...\n");
-        exit(EXIT_FAILURE);
-    }
-    file->head->next = NULL;
-    file->header.NbStructs = 0;
-    printf("Enter the name of the file (max size is 35 characters, spaces NOT allowed): ");
-    scanf("%36s", file->header.name);
-}
-
-block insertion(char TabKey[KEY_MAX_SIZE],int SizeTabKey){
+fBlock *insertion(char TabKey[KEY_MAX_SIZE],int SizeTabKey){
 int SizeBuffer=strlen(buffer);//pour avoir la taille des reste des champs
 char TabKeyIndex[KEY_MAX_SIZE];
 File.head->data=allocBlock(); //creer le premier block
@@ -184,4 +171,5 @@ else {
         Index.tab[j].isDeletedLogically=0;
     }
 }
+return(File.head);
 }
