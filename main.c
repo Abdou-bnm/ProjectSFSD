@@ -230,12 +230,14 @@ int main(int argc, char const *argv[]){
             //entrer la cle 
             printf("enter the key");
             scanf("%16s", buffer);
+            getchar();
             int i=0;
             char c=buffer[0],TabKey[KEY_MAX_SIZE],TabRest[BUFFER_MAX_SIZE];
-            while(( c != 0) && (i < KEY_MAX_SIZE))
+            while(( c != 0) && (i < KEY_MAX_SIZE)){
                 TabKey[i]=buffer[i];
                 i++;
                 c=buffer[i];
+            }
             TabKey[i]=0; // "\0"
             buffer[i]='\0';
             int SizeTabKey=strlen(TabKey);
@@ -245,8 +247,8 @@ int main(int argc, char const *argv[]){
             fgets(buffer+SizeTabKey+1,BUFFER_MAX_SIZE-SizeTabKey-3,stdin); 
             i=SizeTabKey+1;
             c=buffer[i];
-            buffer[i]="\0";
-            buffer[i+1]="\0";
+            buffer[i]='\0';
+            buffer[i+1]='\0';
             int SizeBuffer=strlen(buffer);
             for(int i=SizeTabKey+1;i<SizeBuffer;i++){
                 TabRest[i]=buffer[i];
