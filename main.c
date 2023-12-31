@@ -16,11 +16,11 @@ block* allocBlock(){
 
 bool __recuSearch(unsigned short startIndex, unsigned short endIndex, char* key){
     if(startIndex == endIndex)
-        if(Index[startIndex].isDeletedLogically)
+        if(Index.tab[startIndex].isDeletedLogically)
             return false;
     
     unsigned short median = (startIndex + endIndex) / 2;
-    int strcmpResult = strncmp(key, Index[median].key, KEY_MAX_SIZE);
+    int strcmpResult = strncmp(key, Index.tab[median].key, KEY_MAX_SIZE);
 
     if(startIndex == endIndex && strcmpResult)
         return false;
@@ -38,9 +38,9 @@ bool searchElement(){
     //     fprintf(stderr, "ERROR! [malloc in searchElement]: Couldn't allocate memory")
     //      exit(EXIT_FAILURE);
     // }
-    // key = strncpy(key, buffer.tab, KEY_MAX_SIZE);
-    if(indexSize == 0)                  return false;
-    return __recuSearch(0, indexSize - 1, buffer.tab);
+    // key = strncpy(key, buffer, KEY_MAX_SIZE);
+    if(Index.IndexSize == 0)                  return false;
+    return __recuSearch(0, Index.IndexSize - 1, buffer);
 }
 
 void createFile(file* file){
@@ -84,7 +84,28 @@ int main(int argc, char const *argv[]){
         {
         case 1:
             // Insert function
-            break;
+            //entrer la cle 
+            printf("enter the key");
+            scanf("%16s", buffer);
+            int i=0;
+            char c=buffer[0],TabKey[KEY_MAX_SIZE],TabRest[BUFFER_MAX_SIZE];
+            while(( c != 0) && (i < KEY_MAX_SIZE))
+                TabKey[i]=buffer[i];
+                i++;
+                c=buffer[i];
+            TabKey[i]=0; // "\0"
+            
+           //insertion of the rest of the struct
+            printf("enter the rest of the structs");
+            gets(buffer); //est-ce-que gets t3awed t3amer buffer m debut wela tkemel win kan habes??
+            i=0;
+            c='a';
+            int SizeTabKey=strlen(TabKey);
+             while(( c != 0) && (i < (KEY_MAX_SIZE-SizeTabKey)))
+                TabRest[i]=buffer[i];
+                i++;
+            int SizeTabRest = strlen(TabRest);
+        break;
         
         case 2:
             // Delete function
@@ -92,7 +113,7 @@ int main(int argc, char const *argv[]){
 
         case 3:
             printf("Enter the key to search (Keys does NOT contain spaces) and a maximum size of %d: ", KEY_MAX_SIZE - 1);
-            scanf("%16s", buffer.tab);
+            scanf("%16s", buffer);
             if( searchElement())
                 printf("Element exists.\n");
             else
