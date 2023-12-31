@@ -17,30 +17,30 @@ block* allocBlock(){
 short __recuSearch(unsigned short startIndex, unsigned short endIndex, char* key){
     if(startIndex == endIndex)
         if(Index[startIndex].isDeletedLogically)
-            return false;
+            return -1;
     
     unsigned short median = (startIndex + endIndex) / 2;
     int strcmpResult = strncmp(key, Index[median].key, KEY_MAX_SIZE);
 
     if(startIndex == endIndex && strcmpResult)
-        return false;
+        return -1;
 
-    if(!strcmpResult)       return true;
+    if(!strcmpResult)       return median;
     if(strcmpResult < 1)
-        __recuSearch(startIndex, median, key);
+        return __recuSearch(startIndex, median, key);
     else
-        __recuSearch(median + 1, endIndex, key);
+        return __recuSearch(median + 1, endIndex, key);
 }
 
-bool searchElement(){
-    // char *key = (char*)malloc(sizeof(KEY_MAX_SIZE + 1));
-    // if(key == NULL){
-    //     fprintf(stderr, "ERROR! [malloc in searchElement]: Couldn't allocate memory")
-    //      exit(EXIT_FAILURE);
-    // }
-    // key = strncpy(key, buffer.tab, KEY_MAX_SIZE);
+short searchElement(){
+    char *key = (char*)malloc(sizeof(KEY_MAX_SIZE + 1));
+    if(key == NULL){
+        fprintf(stderr, "ERROR! [malloc in searchElement]: Couldn't allocate memory");
+        exit(EXIT_FAILURE);
+    }
+    key = strncpy(key, buffer, KEY_MAX_SIZE);
     if(indexSize == 0)                  return false;
-    return __recuSearch(0, indexSize - 1, buffer.tab);
+    return __recuSearch(0, indexSize - 1, buffer);
 }
 
 void createFile(file* file){
@@ -56,15 +56,6 @@ void createFile(file* file){
     scanf("%36s", file->header.name);
 }
 
-void DeleteElementLogique(){
-    if(searchElement() == -1){
-        return -1;
-    }
-    else
-    {
-        Index[searchElement()].isDeletedLogically = true;
-    }
-}
 
 void ElementShift(char* NewElementPos,char* StartCurElementPos,char* EndCurElementPos)
 {
@@ -83,6 +74,7 @@ int CalculateSpace(char *StartEspaceAddress, char *EndEspaceAddress){
     return EndEspaceAddress - StartEspaceAddress; 
 }
 
+// Function to update index array (Delete Element)
 void UpdateIndexDelete(int IndexElementDeleted){
     for (int ElementIndex = IndexElementDeleted; ElementIndex < indexSize ; ElementIndex++)
     {
@@ -95,54 +87,83 @@ void UpdateIndexDelete(int IndexElementDeleted){
     indexSize -- ;
 }
 
-int DeleteElementPhysique(file* file){
-    int indexElementDeleted = searchElement();
-    if(indexElementDeleted == -1){
+// Function to delete an element from the file (Logical)
+void DeleteElementLogique(){
+    if(searchElement() == -1){
+        printf("\nERROR! [Searching for Element]:already deleted or not Existe ");
         return -1;
     }
     else
     {
+        Index[searchElement()].isDeletedLogically = true;
+    }
+}
+
+// Function to delete an element from the file (Physique)
+int DeleteElementPhysique(file* file){
+    
+    // Search for the index of the element to be deleted
+    short indexElementDeleted = searchElement();
+ 
+    // Check if the element is not found or already deleted
+    if(indexElementDeleted == -1){
+        printf("\nERROR! [Searching for Element]:already deleted or not Existe");
+        return -1;
+    }
+    else
+    {
+        unsigned short NbElement=-1;
         int FreeSpace = 0;
         char* EndCurElementPos,StartCurElementPos;
         char *NewElementPos = Index[indexElementDeleted].key;
         block* blockAddressRecover = Index[indexElementDeleted].blockAddress;
         for(int i=indexElementDeleted + 1 ; i<indexSize ; i++)
         {
-            if(Index[i].blockAddress != Index[i-1].blockAddress) // To verify if the Shift Will be in the Same Block or not
+            // Verify if the Shift Will be in the Same Block or not
+            if(Index[i].blockAddress != Index[i-1].blockAddress) // Shift the element into a different block
             {
-                FreeSpace = ((Index[i-1].blockAddress)->header).EndAddress - NewElementPos; // The Remaining Free Space in the Bloc
-                if(CalculateSpace(Index[i].key,Index[i].endAddress) <= FreeSpace) // Verify if FreeSpace is sufficient for the Element
+                FreeSpace = ((Index[i-1].blockAddress)->header).EndAddress - NewElementPos; // Calculate the remaining free space in the block
+                // Verify if FreeSpace is sufficient for the Element
+                if(CalculateSpace(Index[i].key,Index[i].endAddress) <= FreeSpace) // FreeSpace is sufficient => Make the Element in the FreeSpace
                 {   
                     EndCurElementPos = Index[i].endAddress;
                     StartCurElementPos = Index[i].key;
                     ElementShift(NewElementPos,StartCurElementPos,EndCurElementPos);
+                    NbElement++;
                 }
-                else // FreeSpace is not sufficient => Make the Element in New Block
+                else // FreeSpace isn't sufficient => Make the Element in New Block
                 {
+                    ((Index[i-1].blockAddress)->header).NbStructs += NbElement; //Update Number of Element in Current Block
+                    ((Index[i].blockAddress)->header).NbStructs -= NbElement+1; //Update Number of Element in New Block
+                    NbElement= 0; 
                     NewElementPos = blockAddressRecover->tab;
                     EndCurElementPos = Index[i].endAddress;
                     StartCurElementPos = Index[i].key;
                     ElementShift(NewElementPos,StartCurElementPos,EndCurElementPos);
                 }             
             }
-            else 
+            else // Shift the element within the same block
             {
                 EndCurElementPos = Index[i].endAddress;
                 StartCurElementPos = Index[i].key;
                 ElementShift(NewElementPos,StartCurElementPos,EndCurElementPos);
             }
+            // Update the block address for the next iteration
             blockAddressRecover = Index[i].blockAddress;
         }
 
-        // Update IndexArray
+        // Update IndexArray to reflect the deletion
         UpdateIndexDelete(indexElementDeleted);
-        // Update Last Bloc
-        if (*((Index[indexSize].blockAddress)->tab) == 0)
+
+        // Update Last Block
+        if (((Index[indexSize].blockAddress)->header.NbStructs) == 0)
         {
             (Index[indexSize].blockAddress)->isUsed = false;
+            file->header.NbStructs--;
         }
-    }
 
+        printf("\nElement Deleted!");
+    }
 }
 
 
@@ -182,7 +203,7 @@ int main(int argc, char const *argv[]){
 
         case 3:
             printf("Enter the key to search (Keys does NOT contain spaces) and a maximum size of %d: ", KEY_MAX_SIZE - 1);
-            scanf("%16s", buffer.tab);
+            scanf("%16s", buffer);
             if( searchElement())
                 printf("Element exists.\n");
             else
