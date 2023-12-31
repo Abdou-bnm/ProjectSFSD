@@ -42,8 +42,13 @@ typedef struct indexElement{
     bool isDeletedLogically;                // Whether the element is deleted logically or not. An element which is deleted logically will be ignored.
 }indexElement;                  
 
+typedef struct IndexType{
+    indexElement tab[36];                // An array of elements that are indexed under this key.
+    unsigned short indexSize;
+}IndexType;
 // Global variables
 char buffer[50];                            // A buffer to transfer data between RAM and Memory (used for file manipulation operations).
-indexElement Index[36];                     // An index associated to the file containing useful information for various operations.
-unsigned short indexSize = 0;               // The index of the first free element in the index.
+// indexElement Index[36];                     // An index associated to the file containing useful information for various operations.
+// unsigned short indexSize = 0;               // The index of the first free element in the index.
+IndexType Index;
 block MS[16];                               // The Memory which will contain all the blocks of the linked list and other blocks used by default.

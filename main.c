@@ -16,11 +16,11 @@ block* allocBlock(){
 
 short __recuSearch(unsigned short startIndex, unsigned short endIndex, char* key){
     if(startIndex == endIndex)
-        if(Index[startIndex].isDeletedLogically)
+        if(Index.tab[startIndex].isDeletedLogically)
             return -1;
     
     unsigned short median = (startIndex + endIndex) / 2;
-    int strcmpResult = strncmp(key, Index[median].key, KEY_MAX_SIZE);
+    int strcmpResult = strncmp(key, Index.tab[median].key, KEY_MAX_SIZE);
 
     if(startIndex == endIndex && strcmpResult)
         return -1;
@@ -39,8 +39,8 @@ short searchElement(){
         exit(EXIT_FAILURE);
     }
     key = strncpy(key, buffer, KEY_MAX_SIZE);
-    if(indexSize == 0)                  return false;
-    return __recuSearch(0, indexSize - 1, buffer);
+    if(Index.indexSize == 0)                  return false;
+    return __recuSearch(0, Index.indexSize - 1, buffer);
 }
 
 void createFile(file* file){
@@ -76,15 +76,15 @@ int CalculateSpace(char *StartEspaceAddress, char *EndEspaceAddress){
 
 // Function to update index array (Delete Element)
 void UpdateIndexDelete(int IndexElementDeleted){
-    for (int ElementIndex = IndexElementDeleted; ElementIndex < indexSize ; ElementIndex++)
+    for (int ElementIndex = IndexElementDeleted; ElementIndex < Index.indexSize ; ElementIndex++)
     {
-        Index[ElementIndex].key = Index[ElementIndex+1].key;                          
-        Index[ElementIndex].blockAddress = Index[ElementIndex+1].blockAddress;
-        Index[ElementIndex].endAddress = Index[ElementIndex+1].endAddress;                
-        Index[ElementIndex].isDeletedLogically = Index[ElementIndex+1].isDeletedLogically;
+        Index.tab[ElementIndex].key = Index.tab[ElementIndex+1].key;                          
+        Index.tab[ElementIndex].blockAddress = Index.tab[ElementIndex+1].blockAddress;
+        Index.tab[ElementIndex].endAddress = Index.tab[ElementIndex+1].endAddress;                
+        Index.tab[ElementIndex].isDeletedLogically = Index.tab[ElementIndex+1].isDeletedLogically;
     }
 
-    indexSize -- ;
+    Index.indexSize -- ;
 }
 
 // Function to delete an element from the file (Logical)
@@ -95,7 +95,7 @@ void DeleteElementLogique(){
     }
     else
     {
-        Index[searchElement()].isDeletedLogically = true;
+        Index.tab[searchElement()].isDeletedLogically = true;
     }
 }
 
@@ -115,50 +115,50 @@ int DeleteElementPhysique(file* file){
         unsigned short NbElement=-1;
         int FreeSpace = 0;
         char* EndCurElementPos,StartCurElementPos;
-        char *NewElementPos = Index[indexElementDeleted].key;
-        block* blockAddressRecover = Index[indexElementDeleted].blockAddress;
-        for(int i=indexElementDeleted + 1 ; i<indexSize ; i++)
+        char *NewElementPos = Index.tab[indexElementDeleted].key;
+        block* blockAddressRecover = Index.tab[indexElementDeleted].blockAddress;
+        for(int i=indexElementDeleted + 1 ; i<Index.indexSize ; i++)
         {
             // Verify if the Shift Will be in the Same Block or not
-            if(Index[i].blockAddress != Index[i-1].blockAddress) // Shift the element into a different block
+            if(Index.tab[i].blockAddress != Index.tab[i-1].blockAddress) // Shift the element into a different block
             {
-                FreeSpace = ((Index[i-1].blockAddress)->header).EndAddress - NewElementPos; // Calculate the remaining free space in the block
+                FreeSpace = ((Index.tab[i-1].blockAddress)->header).EndAddress - NewElementPos; // Calculate the remaining free space in the block
                 // Verify if FreeSpace is sufficient for the Element
-                if(CalculateSpace(Index[i].key,Index[i].endAddress) <= FreeSpace) // FreeSpace is sufficient => Make the Element in the FreeSpace
+                if(CalculateSpace(Index.tab[i].key,Index.tab[i].endAddress) <= FreeSpace) // FreeSpace is sufficient => Make the Element in the FreeSpace
                 {   
-                    EndCurElementPos = Index[i].endAddress;
-                    StartCurElementPos = Index[i].key;
+                    EndCurElementPos = Index.tab[i].endAddress;
+                    StartCurElementPos = Index.tab[i].key;
                     ElementShift(NewElementPos,StartCurElementPos,EndCurElementPos);
                     NbElement++;
                 }
                 else // FreeSpace isn't sufficient => Make the Element in New Block
                 {
-                    ((Index[i-1].blockAddress)->header).NbStructs += NbElement; //Update Number of Element in Current Block
-                    ((Index[i].blockAddress)->header).NbStructs -= NbElement+1; //Update Number of Element in New Block
+                    ((Index.tab[i-1].blockAddress)->header).NbStructs += NbElement; //Update Number of Element in Current Block
+                    ((Index.tab[i].blockAddress)->header).NbStructs -= NbElement+1; //Update Number of Element in New Block
                     NbElement= 0; 
                     NewElementPos = blockAddressRecover->tab;
-                    EndCurElementPos = Index[i].endAddress;
-                    StartCurElementPos = Index[i].key;
+                    EndCurElementPos = Index.tab[i].endAddress;
+                    StartCurElementPos = Index.tab[i].key;
                     ElementShift(NewElementPos,StartCurElementPos,EndCurElementPos);
                 }             
             }
             else // Shift the element within the same block
             {
-                EndCurElementPos = Index[i].endAddress;
-                StartCurElementPos = Index[i].key;
+                EndCurElementPos = Index.tab[i].endAddress;
+                StartCurElementPos = Index.tab[i].key;
                 ElementShift(NewElementPos,StartCurElementPos,EndCurElementPos);
             }
             // Update the block address for the next iteration
-            blockAddressRecover = Index[i].blockAddress;
+            blockAddressRecover = Index.tab[i].blockAddress;
         }
 
         // Update IndexArray to reflect the deletion
         UpdateIndexDelete(indexElementDeleted);
 
         // Update Last Block
-        if (((Index[indexSize].blockAddress)->header.NbStructs) == 0)
+        if (((Index.tab[Index.indexSize].blockAddress)->header.NbStructs) == 0)
         {
-            (Index[indexSize].blockAddress)->isUsed = false;
+            (Index.tab[Index.indexSize].blockAddress)->isUsed = false;
             file->header.NbStructs--;
         }
 
