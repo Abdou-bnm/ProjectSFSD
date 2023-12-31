@@ -2,8 +2,11 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include "insertion.h"
 
 #define KEY_MAX_SIZE 16
+#define BUFFER_MAX_SIZE 50
+#define INDEX_ELEMENT_MAX 36
 
 // The declaration of the header of a file.
 typedef struct fileHeader{
@@ -30,7 +33,7 @@ typedef struct block{
 // The declaration of a single block in memory when used by a the file declared below.
 typedef struct fBlock{
     block* data;                             // The actual block struct in memory.
-    struct fBlock* next;                            // A pointer to the next element (block) in the linked list.
+    struct fBlock* next;                     // A pointer to the next element (block) in the linked list.
 }fBlock;
 
 // The declaration of the file, which will be a sorted linked list, with variable size and no overlap (chevauchement).
