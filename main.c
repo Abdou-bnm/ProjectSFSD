@@ -11,8 +11,7 @@ block* allocBlock(){
 }
 
 short __recuSearch(unsigned short startIndex, unsigned short endIndex, char* key){
-    if(startIndex == endIndex)
-        if(Index.tab[startIndex].isDeletedLogically)
+    if(startIndex == endIndex && Index.tab[startIndex].isDeletedLogically)
             return -1;
     
     unsigned short median = (startIndex + endIndex) / 2;
@@ -29,27 +28,21 @@ short __recuSearch(unsigned short startIndex, unsigned short endIndex, char* key
 }
 
 short searchElement(){
-    char *key = (char*)malloc(sizeof(KEY_MAX_SIZE + 1));
-    if(key == NULL){
-        fprintf(stderr, "ERROR! [malloc in searchElement]: Couldn't allocate memory");
-        exit(EXIT_FAILURE);
-    }
-    key = strncpy(key, buffer, KEY_MAX_SIZE);
     if(Index.indexSize == 0)                  return false;
     return __recuSearch(0, Index.indexSize - 1, buffer);
 }
 
-void createFile(file* file){
-    file->head = (fBlock*)malloc(sizeof(fBlock));
-    file->head->data = allocBlock();
-    if(file->head->data == NULL){
+void createFile(){
+    file.head = (fBlock*)malloc(sizeof(fBlock));
+    file.head->data = allocBlock();
+    if(file.head->data == NULL){
         fprintf(stderr, "\nERROR! [allocBlock in createFile]: No space to allocate block.\nExiting...\n");
         exit(EXIT_FAILURE);
     }
-    file->head->next = NULL;
-    file->header.NbStructs = 0;
+    file.head->next = NULL;
+    file.header.NbStructs = 0;
     printf("Enter the name of the file (max size is 35 characters, spaces NOT allowed): ");
-    scanf("%36s", file->header.name);
+    scanf("%36s", file.header.name);
 }
 
 
@@ -79,13 +72,11 @@ void UpdateIndexDelete(int IndexElementDeleted){
 }
 
 // Function to update File
-void UpdateFileStruct(file* file)
+void UpdateFileStruct()
 {
-    fBlock *ftmp = (*file).head ; 
+    fBlock *ftmp = file.head; 
     while((ftmp)->next != NULL)
-    {
         ftmp = ftmp->next;
-    }
 }
 
 // Function to delete an element from the file (Logical)
@@ -93,30 +84,29 @@ void DeleteElementLogique(){
     short indexElement = searchElement();
     if(indexElement == -1){
         printf("\nERROR! [Searching for Element]:already deleted or not Existe ");
-        return ;
+        return;
     }
     else
-    {
         Index.tab[indexElement].isDeletedLogically = true;
-    }
+    
 }
 
 // Function to delete an element from the file (Physique)
-int DeleteElementPhysique(file* file){
+int DeleteElementPhysique(){
     
     // Search for the index of the element to be deleted
     short indexElementDeleted = searchElement();
  
     // Check if the element is not found or already deleted
     if(indexElementDeleted == -1){
-        printf("\nERROR! [Searching for Element]:already deleted or not Existe");
+        fprintf(stderr, "\nERROR! [Searching for Element]: Already deleted or not Existe.\n");
         return -1;
     }
     else
     {
         unsigned short NbElement=-1;
         int FreeSpace = 0;
-        char* EndCurElementPos,StartCurElementPos;
+        char* EndCurElementPos, *StartCurElementPos;
         char *NewElementPos = Index.tab[indexElementDeleted].key;
         block* blockAddressdataRecover = (Index.tab[indexElementDeleted].blockAddress)->data;
         for(int i=indexElementDeleted + 1 ; i<Index.indexSize ; i++)
@@ -164,7 +154,7 @@ int DeleteElementPhysique(file* file){
         }
 
         // Update nb Element in file header
-        file->header.NbStructs--;
+        file.header.NbStructs--;
 
         printf("\nElement Deleted!");
     }
@@ -173,7 +163,6 @@ int DeleteElementPhysique(file* file){
 
 int main(int argc, char const *argv[]){
     unsigned short answer;                                  // Used to get user's answers
-    file file;
     memset(&file, 0, sizeof(file));
     
     printf("Do you want to create a new file?\n");
