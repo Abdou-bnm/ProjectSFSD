@@ -1,7 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <string.h>
 #include "structs.h"
 
 block* allocBlock(){
@@ -102,7 +98,7 @@ void DeleteElementLogique(){
     short indexElement = searchElement();
     if(indexElement == -1){
         printf("\nERROR! [Searching for Element]:already deleted or not Existe ");
-        return -1;
+        return ;
     }
     else
     {
