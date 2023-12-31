@@ -1,3 +1,8 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
+
 #define KEY_MAX_SIZE 16
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,7 +41,7 @@ typedef struct fBlock{
 // The declaration of the file, which will be a sorted linked list, with variable size and no overlap (chevauchement).
 typedef struct file{
     fileHeader header;                      // The header of the file, containing useful/essential information.
-    fBlock *head;                           // The head of the linked list containing all the data of the file.
+    fBlock *cell;                           // The head of the linked list containing all the data of the file.
 }file;
 
 // The declaration of an element of the "index" array, which contains information needed for search, insertion, ...etc.
@@ -48,6 +53,18 @@ typedef struct indexElement{
 }indexElement;                  
 
 typedef struct IndexType{
+<<<<<<< HEAD
+    indexElement tab[36]; 
+    unsigned short IndexSize;  
+}IndexType;
+
+// Global variables
+char buffer[50];                            // A buffer to transfer data between RAM and Memory (used for file manipulation operations).
+indexElement Index[36];                     // An index associated to the file containing useful information for various operations.
+unsigned short indexSize = 0;               // The index of the first free element in the index.
+block MS[16];                               // The Memory which will contain all the blocks of the linked list and other blocks used by default.
+
+=======
     indexElement tab[36];                // An array of elements that are indexed under this key.
     unsigned short indexSize;
 }IndexType;
@@ -57,3 +74,4 @@ char buffer[50];                            // A buffer to transfer data between
 // unsigned short indexSize = 0;               // The index of the first free element in the index.
 IndexType Index;
 block MS[16];                               // The Memory which will contain all the blocks of the linked list and other blocks used by default.
+>>>>>>> d94bd9fb2bd3bc0a6d7c59b350f9c07ea5889f04
