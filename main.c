@@ -140,12 +140,20 @@ int DeleteElementPhysique(file* file){
                 }
                 else // FreeSpace isn't sufficient => Make the Element in New Block
                 {
+                    if(NbElement == -1) // element deleted was in base of block and the next element have more space 
+                    {
+                        (((Index.tab[i].blockAddress)->data)->header).NbStructs -= NbElement+1; //Update Number of Element in New Block
+                    }
                     (((Index.tab[i-1].blockAddress)->data)->header).NbStructs += NbElement; //Update Number of Element in Current Block
-                    (((Index.tab[i].blockAddress)->data)->header).NbStructs -= NbElement+1; //Update Number of Element in New Block
+                    
                     NbElement= 0; 
                     NewElementPos = blockAddressdataRecover->tab;
                     EndCurElementPos = Index.tab[i].endAddress;
                     StartCurElementPos = Index.tab[i].key;
+                    if(NewElementPos == StartCurElementPos)
+                    {
+                        return; // Shift Complete (Block no need to do shift on it)
+                    }
                     Index.tab[i].key = NewElementPos;
                     ElementShift(&NewElementPos,StartCurElementPos,EndCurElementPos);
                     Index.tab[i].endAddress = NewElementPos;
