@@ -30,7 +30,7 @@ typedef struct block{
 // The declaration of a single block in memory when used by a the file declared below.
 typedef struct fBlock{
     block* data;                             // The actual block struct in memory.
-    fBlock *next;                            // A pointer to the next element (block) in the linked list.
+    struct fBlock *next;                            // A pointer to the next element (block) in the linked list.
 }fBlock;
 
 // The declaration of the file, which will be a sorted linked list, with variable size and no overlap (chevauchement).

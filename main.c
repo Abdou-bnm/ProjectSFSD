@@ -29,12 +29,12 @@ short __recuSearch(unsigned short startIndex, unsigned short endIndex, char* key
 }
 
 short searchElement(){
-    char *key = (char*)malloc(sizeof(KEY_MAX_SIZE + 1));
-    if(key == NULL){
-        fprintf(stderr, "ERROR! [malloc in searchElement]: Couldn't allocate memory");
-        exit(EXIT_FAILURE);
-    }
-    key = strncpy(key, buffer, KEY_MAX_SIZE);
+    // char *key = (char*)malloc(sizeof(KEY_MAX_SIZE + 1));
+    // if(key == NULL){
+    //     fprintf(stderr, "ERROR! [malloc in searchElement]: Couldn't allocate memory");
+    //     exit(EXIT_FAILURE);
+    // }
+    // key = strncpy(key, buffer, KEY_MAX_SIZE);
     if(Index.indexSize == 0)                  return false;
     return __recuSearch(0, Index.indexSize - 1, buffer);
 }
@@ -53,17 +53,17 @@ void createFile(file* file){
 }
 
 
-void ElementShift(char* NewElementPos,char* StartCurElementPos,char* EndCurElementPos)
+void ElementShift(char** NewElementPos,char* StartCurElementPos,char* EndCurElementPos)
 {
     //Shift the Element to New Pos
     while(StartCurElementPos != EndCurElementPos)
     {
-        *NewElementPos = *StartCurElementPos;
+        **NewElementPos = *StartCurElementPos;
         *StartCurElementPos = 0;
-        NewElementPos += sizeof(char);
+        *NewElementPos += sizeof(char);
         StartCurElementPos += sizeof(char);
     }
-    NewElementPos += 2*sizeof(char);
+    **NewElementPos = *StartCurElementPos;
 }
 
 int CalculateSpace(char *StartEspaceAddress, char *EndEspaceAddress){
@@ -118,9 +118,9 @@ int DeleteElementPhysique(file* file){
     {
         unsigned short NbElement=-1;
         int FreeSpace = 0;
-        char* EndCurElementPos,StartCurElementPos;
+        char *EndCurElementPos,*StartCurElementPos;
         char *NewElementPos = Index.tab[indexElementDeleted].key;
-        block* blockAddressdataRecover = (Index.tab[indexElementDeleted].blockAddress)->data;
+        block* blockAddressdataRecover = (Index.tab[indexElementDeleted].blockAddress)->data; //Save Address of Block 
         for(int i=indexElementDeleted + 1 ; i<Index.indexSize ; i++)
         {
             // Verify if the Shift Will be in the Same Block or not
@@ -132,7 +132,10 @@ int DeleteElementPhysique(file* file){
                 {   
                     EndCurElementPos = Index.tab[i].endAddress;
                     StartCurElementPos = Index.tab[i].key;
-                    ElementShift(NewElementPos,StartCurElementPos,EndCurElementPos);
+                    Index.tab[i].key = NewElementPos;
+                    ElementShift(&NewElementPos,StartCurElementPos,EndCurElementPos);
+                    Index.tab[i].endAddress = NewElementPos;
+                    *NewElementPos += 2*sizeof(char);
                     NbElement++;
                 }
                 else // FreeSpace isn't sufficient => Make the Element in New Block
@@ -143,14 +146,20 @@ int DeleteElementPhysique(file* file){
                     NewElementPos = blockAddressdataRecover->tab;
                     EndCurElementPos = Index.tab[i].endAddress;
                     StartCurElementPos = Index.tab[i].key;
-                    ElementShift(NewElementPos,StartCurElementPos,EndCurElementPos);
+                    Index.tab[i].key = NewElementPos;
+                    ElementShift(&NewElementPos,StartCurElementPos,EndCurElementPos);
+                    Index.tab[i].endAddress = NewElementPos;
+                    *NewElementPos += 2*sizeof(char);
                 }             
             }
             else // Shift the element within the same block
             {
                 EndCurElementPos = Index.tab[i].endAddress;
                 StartCurElementPos = Index.tab[i].key;
-                ElementShift(NewElementPos,StartCurElementPos,EndCurElementPos);
+                Index.tab[i].key = NewElementPos;
+                ElementShift(&NewElementPos,StartCurElementPos,EndCurElementPos);
+                Index.tab[i].endAddress = NewElementPos;
+                *NewElementPos += 2*sizeof(char);
             }
             // Update the block address for the next iteration
             blockAddressdataRecover = (Index.tab[i].blockAddress)->data;
@@ -205,6 +214,21 @@ int main(int argc, char const *argv[]){
         
         case 2:
             // Delete function
+            printf("Enter the key to Delete Element (Keys does NOT contain spaces) and a maximum size of %d: ", KEY_MAX_SIZE - 1);
+            scanf("%16s", buffer);
+
+            printf("Do you want to delete element definitively \n");
+            printf("1- yes (Physical Delete)\n");
+            printf("2- no (Logical Delete) \n");
+            
+            scanf("%hu", &answer);
+            if(answer == 1){
+                DeleteElementPhysique(&file);
+            }
+            else
+            {
+                DeleteElementLogique(&file);
+            }
             break;
 
         case 3:
