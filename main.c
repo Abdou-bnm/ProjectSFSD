@@ -160,7 +160,7 @@ int DeleteElementPhysique(file* file){
                     *NewElementPos += 2*sizeof(char);
                 }             
             }
-            else if(answer == 2)// Shift the element within the same block
+            else// Shift the element within the same block
             {
                 EndCurElementPos = Index.tab[i].endAddress;
                 StartCurElementPos = Index.tab[i].key;
@@ -233,7 +233,7 @@ int main(int argc, char const *argv[]){
             if(answer == 1){
                 DeleteElementPhysique(&file);
             }
-            else
+            else if(answer == 2)
             {
                 DeleteElementLogique(&file);
             }
