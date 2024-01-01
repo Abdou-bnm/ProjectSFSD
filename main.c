@@ -1,12 +1,11 @@
 #include "structs.h"
 
 block* allocBlock(){
-    for(int i = 0; i < 16; i++)
+    for(int i = 0; i < MS_SIZE; i++)
         if(MS[i].isUsed == 0){
             MS[i].isUsed = 1;
             return &MS[i];
         }
-    
     return NULL; 
 }
 
@@ -33,7 +32,7 @@ short searchElement(){
     return __recuSearch(0, Index.indexSize - 1, buffer);
 }
 
-void createFile(file* file){
+void createFile(File* file){
     file->head = (fBlock*)malloc(sizeof(fBlock));
     file->head->data = allocBlock();
     if(file->head->data == NULL){
@@ -75,7 +74,7 @@ void UpdateIndexDelete(int IndexElementDeleted){
 }
 
 // Function to update File
-void UpdateFileStruct(file* file)
+void UpdateFileStruct(File* file)
 {
     fBlock *ftmp = (*file).head ; 
     while((ftmp)->next != NULL)
@@ -98,7 +97,7 @@ void DeleteElementLogique(){
 }
 
 // Function to delete an element from the file (Physique)
-int DeleteElementPhysique(file* file){
+int DeleteElementPhysique(File* file){
     
     // Search for the index of the element to be deleted
     short indexElementDeleted = searchElement();
@@ -183,10 +182,43 @@ int DeleteElementPhysique(file* file){
     }
 }
 
+void __printStr(char str[], int* i){
+    while(str[*i] != '\0'){
+        printf("%c", str[*i]);
+        (*i)++;
+    }
+}
+
+void __formulatedPrintStr(char *label, char str[], int* i){
+    printf("%s: \"", label);
+    __printStr(str + *i, i);
+    printf("\".\n");
+}
+
+void __printBlock(block* block){
+    int nbStruct = 1;
+    for(int i = 0; i < BLOCK_SIZE; i++){
+        if(block->tab[i] == '\0')       break;
+        printf("\nStruct number %d:\n", nbStruct);
+        __formulatedPrintStr("Key", block->tab + i, &i);
+        i++;
+        __formulatedPrintStr("Data", block->tab + i, &i);
+    }
+}
+
+void printFile(File file){
+    int nbFBlock = 1;
+    while(file.head != NULL){
+        __printBlock(file.head->data);
+        file.head = file.head->next;
+    }
+}
+
+
 
 int main(int argc, char const *argv[]){
     unsigned short answer;                                  // Used to get user's answers
-    file file;
+    File file;
     memset(&file, 0, sizeof(file));
     
     printf("Do you want to create a new file?\n");

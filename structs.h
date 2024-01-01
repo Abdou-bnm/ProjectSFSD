@@ -4,11 +4,14 @@
 #include <string.h>
 
 #define KEY_MAX_SIZE 16
+#define FILE_NAME_MAX_SIZE 36
+#define BLOCK_SIZE 50
+#define MS_SIZE 16
 
 // The declaration of the header of a file.
 typedef struct fileHeader{
     unsigned int NbStructs;
-    char name[36];
+    char name[FILE_NAME_MAX_SIZE];
 }fileHeader;
 
 // The declaration of the header of a block.
@@ -23,7 +26,7 @@ typedef struct blockHeader{
 // The declaration of a single block in memory, which is capable of containing multiple structs.
 typedef struct block{
     blockHeader header;                     // The header of the block, containing useful/essential information.
-    char tab[50];                           // The actual memory of the block.
+    char tab[BLOCK_SIZE];                   // The actual memory of the block.
     bool isUsed;                            // A boolean that indicates the availability of the block, needed for insertion into a new block.
 }block;
 
@@ -34,10 +37,10 @@ typedef struct fBlock{
 }fBlock;
 
 // The declaration of the file, which will be a sorted linked list, with variable size and no overlap (chevauchement).
-typedef struct file{
+typedef struct File{
     fileHeader header;                      // The header of the file, containing useful/essential information.
     fBlock *head;                           // The head of the linked list containing all the data of the file.
-}file;
+}File;
 
 // The declaration of an element of the "index" array, which contains information needed for search, insertion, ...etc.
 typedef struct indexElement{        
@@ -51,8 +54,8 @@ typedef struct IndexType{
     indexElement tab[36];                   // An array of elements that are indexed under this key.
     unsigned short indexSize;               // The index of the first free element in the index.
 }IndexType;
-// Global variables
-char buffer[50];                            // A buffer to transfer data between RAM and Memory (used for file manipulation operations).
-IndexType Index;                            // An index associated to the file containing useful information for various operations.
 
-block MS[16];                               // The Memory which will contain all the blocks of the linked list and other blocks used by default.
+// Global variables
+char buffer[BLOCK_SIZE];                    // A buffer to transfer data between RAM and Memory (used for file manipulation operations).
+IndexType Index;                            // An index associated to the file containing useful information for various operations.
+block MS[MS_SIZE];                          // The Memory which will contain all the blocks of the linked list and other blocks used by default.
