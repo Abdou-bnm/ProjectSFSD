@@ -29,12 +29,6 @@ short __recuSearch(unsigned short startIndex, unsigned short endIndex, char* key
 }
 
 short searchElement(){
-    char *key = (char*)malloc(sizeof(KEY_MAX_SIZE + 1));
-    if(key == NULL){
-        fprintf(stderr, "ERROR! [malloc in searchElement]: Couldn't allocate memory");
-        exit(EXIT_FAILURE);
-    }
-    key = strncpy(key, buffer, KEY_MAX_SIZE);
     if(Index.indexSize == 0)                  return false;
     return __recuSearch(0, Index.indexSize - 1, buffer);
 }
@@ -143,7 +137,14 @@ int DeleteElementPhysique(file* file){
                     NewElementPos = blockAddressdataRecover->tab;
                     EndCurElementPos = Index.tab[i].endAddress;
                     StartCurElementPos = Index.tab[i].key;
-                    ElementShift(NewElementPos,StartCurElementPos,EndCurElementPos);
+                    if(NewElementPos == StartCurElementPos)
+                    {
+                        return -1; // Shift Complete (Block no need to do shift on it)
+                    }
+                    Index.tab[i].key = NewElementPos;
+                    ElementShift(&NewElementPos,StartCurElementPos,EndCurElementPos);
+                    Index.tab[i].endAddress = NewElementPos;
+                    *NewElementPos += 2*sizeof(char);
                 }             
             }
             else // Shift the element within the same block
