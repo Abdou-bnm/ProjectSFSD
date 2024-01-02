@@ -23,7 +23,7 @@ typedef struct block{
 // The declaration of a single block in memory when used by a the file declared below.
 typedef struct fBlock{
     block* data;                             // The actual block struct in memory.
-    block* next;                            // A pointer to the next element (block) in the linked list.
+   struct fBlock* next;                            // A pointer to the next element (block) in the linked list.
 }fBlock;
 
 // The declaration of the file, which will be a sorted linked list, with variable size and no overlap (chevauchement).
@@ -35,7 +35,7 @@ typedef struct file{
 // The declaration of an element of the "index" array, which contains information needed for search, insertion, ...etc.
 typedef struct indexElement{        
     char *key;
-    block *blockAddress;                    // Pointer to the block of the element.
+    fBlock *blockAddress;                    // Pointer to the block of the element.
     char *endAddress;                       // Pointer to the last byte of the element.
     bool isDeletedLogically;                // Whether the element is deleted logically or not. An element which is deleted logically will be ignored.
 }indexElement;                  

@@ -79,7 +79,7 @@ if (Index.IndexSize==0){
     //inserer dans l'indexe
     Index.IndexSize=1;
     Index.tab[0].key=&(PtrF->data->tab[0]);
-    Index.tab[0].blockAddress=PtrF->data;
+    Index.tab[0].blockAddress->data=PtrF->data;
     Index.tab[0].endAddress=&(PtrF->data->tab[SizeTabKey]);
     Index.tab[0].isDeletedLogically=0;
 }
@@ -111,7 +111,7 @@ else {
            //inserer dans l'indexe
             Index.tab[j].key=(Index.tab[j-1].endAddress + SizeTabRest + 4); //supposant que EndAderess se trouve au niveau du dernier caractere de la cle(+3 pour les 3 "\0" +1 pour se positionner sur la nouvelle case)
             Index.tab[j].endAddress=(Index.tab[j].key + SizeTabKey ); 
-            Index.tab[j].blockAddress=PtrF->data;
+            Index.tab[j].blockAddress->data=PtrF->data;
             Index.tab[j].isDeletedLogically=0;
    
             //inserer dans le bloc
@@ -127,14 +127,14 @@ else {
         }
         else {
             //allouer un nv bloc
-            PtrF->next=allocBlock();
+            PtrF->next->data=allocBlock();
             PtrF=PtrF->next; //deplacer le ptr
             PtrF->next=NULL;
             
            //inserer dans l'indexe
             Index.tab[j].key=&(PtrF->data->tab[0]);
             Index.tab[j].endAddress=(Index.tab[j].key + SizeTabKey ); 
-            Index.tab[j].blockAddress=PtrF->data;
+            Index.tab[j].blockAddress->data=PtrF->data;
             Index.tab[j].isDeletedLogically=0;
    
             //inserer dans le bloc
@@ -155,13 +155,13 @@ else {
         //traitement a l'interieur du block
         fBlock *Q =Index.tab[j].blockAddress ;//pointeur de parcour sur les blocks(il commence par le block du 1er element superieur)
         if(BUFFER_MAX_SIZE - PtrF->data->header.usedSpace < SizeTabRest +SizeTabKey +3){
-            PtrF->next=allocBlock();
+            PtrF->next->data=allocBlock();
             PtrF=PtrF->next;
             PtrF->data->header.NbStructs=1;//je ne suis pas sure que ca soit 1??
             PtrF->data->header.usedSpace=SizeTabRest +SizeTabKey +3; //pas sure aussi
         }
         fBlock *P=PtrF,*R=Q;
-        char *Qtab=&(Index.tab[j].key),*Ptab=Qtab + Q->data->header.usedSpace;
+        char *Qtab=Index.tab[j].key ,*Ptab=Qtab + Q->data->header.usedSpace;
         //traitement decalage 
         while(Q!=P){
             while(R->next!=P){R=R->next;}
