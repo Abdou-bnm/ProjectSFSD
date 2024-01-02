@@ -187,9 +187,9 @@ void __printBlock(block* block){
     while(block->tab[i] != '\0'){
         printf("Struct number %d:\n", nbStruct);
 
-        printf("Key: \"%s\".\n", block->tab[i]);
-        i += strlen(block->tab[i]) + 1;
-        printf("Key: \"%s\".\n\n", block->tab[i]);
+        printf("Key: \"%s\".\n", &block->tab[i]);
+        i += strlen(&block->tab[i]) + 1;
+        printf("Key: \"%s\".\n\n", &block->tab[i]);
         i++;        nbStruct++;
     }
 }
