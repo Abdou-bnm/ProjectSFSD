@@ -182,49 +182,37 @@ int DeleteElementPhysique(File* file){
     }
 }
 
-void __printStr(char str[], int* i){
-    while(str[*i] != '\0'){
-        printf("%c", str[*i]);
-        (*i)++;
-    }
-}
-
-void __formulatedPrintStr(char *label, char str[], int* i){
-    printf("%s: \"", label);
-    __printStr(str + *i, i);
-    printf("\".\n");
-}
-
 void __printBlock(block* block){
-    int nbStruct = 1;
-    for(int i = 0; i < BLOCK_SIZE; i++){
-        if(block->tab[i] == '\0')       break;
-        printf("\nStruct number %d:\n", nbStruct);
-        __formulatedPrintStr("Key", block->tab + i, &i);
-        i++;
-        __formulatedPrintStr("Data", block->tab + i, &i);
+    int i = 0, nbStruct = 1;
+    while(block->tab[i] != '\0'){
+        printf("Struct number %d:\n", nbStruct);
+
+        printf("Key: \"%s\".\n", block->tab[i]);
+        i += strlen(block->tab[i]) + 1;
+        printf("Key: \"%s\".\n\n", block->tab[i]);
+        i++;        nbStruct++;
     }
 }
 
 void printFile(File file){
     int nbFBlock = 1;
     while(file.head != NULL){
+        printf("fBlock number %d:\n", nbFBlock);
         __printBlock(file.head->data);
+        printf("\n-------------------------------------------\n");
         file.head = file.head->next;
     }
 }
 
-
-
 int main(int argc, char const *argv[]){
-    unsigned short answer;                                  // Used to get user's answers
+    unsigned short answer;                                  // Used to get user's answers.
     File file;
-    memset(&file, 0, sizeof(file));
+    memset(&file, 0, sizeof(file));                         // Clear the newly-created file.
     
     printf("Do you want to create a new file?\n");
     printf("1- yes\n");
     printf("2- no\n");
-    scanf("%hu", &answer);                                  // "%hu" format specifier for unsigned short
+    scanf("%hu", &answer);                                  // "%hu" format specifier for unsigned short.
     if(answer == 1)
         createFile(&file);
     else
@@ -272,16 +260,16 @@ int main(int argc, char const *argv[]){
                 printf("Element exists.\n");
             else
                 printf("Element doesn't exist.\n");
-            
             break;
 
         case 4:
-            // Print function
+            printf("Printing the file...");
+            printf("\n-------------------------------------------\n");
+            printFile(file);
             break;
 
         default:
-            fprintf(stderr, "Invalid choice, exiting...");
-            exit(EXIT_FAILURE);
+            fprintf(stderr, "Invalid choice.\n");
             break;
         }
 
