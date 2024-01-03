@@ -42,11 +42,11 @@ bool searchElement(){
     return __recuSearch(0, Index.IndexSize - 1, buffer);
 }
 
-void createFile(file* file){
+void createfile(file* file){
     file->head = (fBlock*)malloc(sizeof(fBlock));
     file->head->data = allocBlock();
     if(file->head->data == NULL){
-        fprintf(stderr, "\nERROR! [allocBlock in createFile]: No space to allocate block.\nExiting...\n");
+        fprintf(stderr, "\nERROR! [allocBlock in createfile]: No space to allocate block.\nExiting...\n");
         exit(EXIT_FAILURE);
     }
     file->head->next = NULL;
@@ -56,16 +56,18 @@ void createFile(file* file){
 }
 
 
-fBlock *insertion(file File,char TabKey[KEY_MAX_SIZE],int SizeTabKey,int SizeTabRest){
+fBlock *insertion(fBlock *head,char TabKey[KEY_MAX_SIZE],int SizeTabKey,int SizeTabRest){
 
 char TabKeyIndex[KEY_MAX_SIZE];
-File.head->data=allocBlock(); //creer le premier block
-fBlock *PtrF=File.head;//initialiser un ptr sur le block courrent 
-PtrF->next=NULL;
+fBlock *PtrF=head;
+
+//while (PtrF->data!=NULL || PtrF->next!=NULL){PtrF=PtrF->next;}//initialiser un ptr sur le block courrent 
 
 //COMMENCER L'INSERTION
 if (Index.IndexSize==0){
+    
     //mettre le header a jour
+    if(PtrF->data==NULL){head->data=allocBlock();head->next=NULL;PtrF=head;}
     PtrF->data->header.NbStructs=1;
     PtrF->data->header.usedSpace=SizeTabRest+SizeTabKey+3;
    
@@ -80,7 +82,7 @@ if (Index.IndexSize==0){
     Index.IndexSize=1;
     Index.tab[0].key=&(PtrF->data->tab[0]);
     Index.tab[0].blockAddress=PtrF;
-    Index.tab[0].endAddress=&(PtrF->data->tab[SizeTabKey]);
+    Index.tab[0].endAddress=&(PtrF->data->tab[SizeTabKey-1]);
     Index.tab[0].isDeletedLogically=0;
 }
 else {
@@ -94,6 +96,7 @@ else {
         PtrStart++;
     }
 
+    //chercher la premiere cle se trouvant dans l'indexe > a la cle entree par l'utilisateur 
     while(j<Index.IndexSize && strncmp(TabKeyIndex,TabKey,16)<0){
         j++;
         PtrStart=Index.tab[j].key;
@@ -106,18 +109,19 @@ else {
         }
     }
     if(j>=Index.IndexSize){
-       if(BUFFER_MAX_SIZE - PtrF->data->header.usedSpace >= SizeTabKey+SizeTabRest+3){
+        PtrF=Index.tab[j-1].blockAddress;
    
-           //inserer dans l'indexe
+        if(BUFFER_MAX_SIZE - PtrF->data->header.usedSpace >= SizeTabKey+SizeTabRest+3){
+            //inserer dans l'indexe
             Index.tab[j].key=(Index.tab[j-1].endAddress + SizeTabRest + 4); //supposant que EndAderess se trouve au niveau du dernier caractere de la cle(+3 pour les 3 "\0" +1 pour se positionner sur la nouvelle case)
             Index.tab[j].endAddress=(Index.tab[j].key + SizeTabKey ); 
             Index.tab[j].blockAddress=PtrF;
             Index.tab[j].isDeletedLogically=0;
    
             //inserer dans le bloc
-            //placer la chaine(stockée en haut dans la chaine buffer) dans le bloc
+            //placer la chaine dans le bloc(elle se trouve a la fin de l'indexe donc c'est le dernier enregistrement du bloc courrant)
             PtrStart=Index.tab[j].key;
-            PtrEnd=Index.tab[j].endAddress;
+            PtrEnd=Index.tab[j].endAddress + SizeTabRest + 3 ;
             i=0;
             while(PtrStart!=PtrEnd){
                 *PtrStart=buffer[i];
@@ -128,21 +132,20 @@ else {
         else {
             //allouer un nv bloc
             PtrF->next->data=allocBlock();
-            PtrF=PtrF->next; //deplacer le ptr
-            PtrF->next=NULL;
+            PtrF->next->next=NULL; 
+            PtrF=PtrF->next;//deplacer le ptr
             
-           //inserer dans l'indexe
+            //inserer dans l'indexe
             Index.tab[j].key=&(PtrF->data->tab[0]);
             Index.tab[j].endAddress=(Index.tab[j].key + SizeTabKey ); 
             Index.tab[j].blockAddress=PtrF;
             Index.tab[j].isDeletedLogically=0;
    
             //inserer dans le bloc
-            //placer la chaine(stockée en haut dans la chaine buffer) dans le bloc
-            //placer la chaine dans le bloc
+            //placer la chaine entree par l'utilisateur au niveau du debur du nouveau bloc 
             //a revoir
             PtrStart=Index.tab[j].key;
-            PtrEnd=Index.tab[j].endAddress;
+            PtrEnd=Index.tab[j].endAddress + SizeTabRest + 3;
             i=0;
             while(PtrStart!=PtrEnd){
                 *PtrStart=buffer[i];
@@ -152,51 +155,100 @@ else {
         }
     }
     else{
-        //traitement a l'interieur du block
-        fBlock *Q =Index.tab[j].blockAddress ;//pointeur de parcour sur les blocks(il commence par le block du 1er element superieur)
-        if(BUFFER_MAX_SIZE - PtrF->data->header.usedSpace < SizeTabRest +SizeTabKey +3){
-            PtrF->next->data=allocBlock();
-            PtrF->next->next=NULL;
-            PtrF=PtrF->next;
-            PtrF->data->header.NbStructs=1;//je ne suis pas sure que ca soit 1??
-            PtrF->data->header.usedSpace=SizeTabRest +SizeTabKey +3; //pas sure aussi
+        //pour l'insertion dans l'indexe :
+        char *PtrKey=Index.tab[j].key;
+        fBlock *PtrBlockKey=Index.tab[j].blockAddress;
+
+        //file pour stocker les donnees
+        char file[2*BUFFER_MAX_SIZE];
+        int Endfile =0; //fin de file et aussi taille de file
+
+        int N=(SizeTabKey+SizeTabRest+3)-(BUFFER_MAX_SIZE-Index.tab[j].blockAddress->data->header.usedSpace);
+        fBlock *P=Index.tab[j].blockAddress; //pointeur sur le block du premier element > a la cle
+        char *Qtab =&(P->data->tab[BUFFER_MAX_SIZE - P->data->header.usedSpace -1]); //pointeur sur le dernier element du block du premier element > a la cle
+        //enfiler l'enregistrement 
+        for(int i=0;i<SizeTabKey+SizeTabRest+3;i++){
+         enfiler(file,buffer[i],&Endfile);
         }
-        fBlock *P=PtrF,*R=Q;
-        char *Qtab=Index.tab[j].key ,*Ptab=Qtab + Q->data->header.usedSpace;
-        //traitement decalage 
-        while(Q!=P){
-            while(R->next!=P){R=R->next;}
-            unsigned short N=P->data->header.usedSpace;//limite de la boucle
-            for(int k =0;k<(P->data->header.usedSpace);k++){
-                P->data->tab[N]=P->data->tab[N-1];
-                N--;
+        
+        while (Endfile!=0)
+        {
+            int Sizefile=Endfile;//stocker la taille de la pile
+            int cpt=0;
+            if(N>0){
+             while(cpt<N || *Qtab != '#' ){
+                    enfiler(file,*Qtab,&Endfile);
+                    cpt++;
+                    Qtab--;
+                }
+            }   
+            if(P==Index.tab[j].blockAddress){
+                char *QtabPrime=Qtab, *Ptab=Index.tab->key; //pointeur sur element de fin du block + pointeur sur ou on va inserer la cle
+                int nb=Qtab-Ptab; // nb d'occurrences;
+                for (int i=0;i<SizeTabKey+SizeTabRest+3;i++){
+                    Qtab=QtabPrime+i;
+                    for(int k=0;k<nb-1;k++){
+                        *(Qtab+1)=*Qtab;
+                        Qtab--;
+                    }   
+                }
+                P->data->header.usedSpace=P->data->header.usedSpace - N + SizeTabKey+SizeTabRest+3;//update de l'espace du block
+                //insertion de la donnee
+                for (int i=0;i<SizeTabKey+SizeTabRest+3;i++){
+                 *Ptab=defiler(file,&Endfile);
+                    Ptab++;
+                }
             }
-            P=R;
-            R=Q; 
-        }   
-        while(Ptab!=Qtab){
-            *Ptab=*(Ptab-1);
-            Ptab=Ptab-1;
+            else if(P->next!=NULL){
+             char *Ptab=&(P->data->tab[P->data->header.usedSpace-1]);//pointeur sur le dernier element du block
+             char *PtabPrime=Ptab ,*Rtab=NULL;//Rtab nous aidera pour l'insertion c'est tout
+             int nb=P->data->header.usedSpace;//nb d'occurrences 
+             //decalage
+             for (int i=0;i<Sizefile;i++){
+                 Ptab=PtabPrime+i;
+                 for(int k=0;k<nb-1;k++){
+                     *(Ptab+1)=*Ptab;
+                     Ptab--;
+                    }   
+                }
+
+             P->data->header.usedSpace=P->data->header.usedSpace - N + Sizefile;//update de l'espace du block
+             Rtab=&(P->data->tab[0]);//placer Rtab sur le premier element du block
+             //commencer a mettre les elements de la file au tout debut du block
+             for (int i=0;i<Sizefile;i++){
+                 *Rtab=defiler(file,&Endfile);
+                 Rtab++;
+                }
+            }
+            else {
+             P->next->data=allocBlock();
+             P->next->next=NULL;
+             P=P->next;
+             //defiler directement les elements de la pile dans le block
+             char *Rtab=&(P->data->tab[0]);
+             for (int i=0;i<Sizefile;i++){
+                 *Rtab=defiler(file,&Endfile);
+                 Rtab++;
+                }    
+            }
+            P=P->next;
+            Qtab =&(P->data->tab[BUFFER_MAX_SIZE - P->data->header.usedSpace-1]);
+            N=(Sizefile)-(BUFFER_MAX_SIZE - P->data->header.usedSpace);
         }
-        //insertion dans le bloc
-        for(int i=0;i< SizeTabRest +SizeTabKey +3;i++){
-            *(Qtab+i)=buffer[i];
-        }
-    
-        //traitement de l'indexe
+     //traitement de l'indexe
          // decaler les elements de l'indexe
        int i=Index.IndexSize;
         while(i>=j){//pour l'egalite pas sure (a revoir)
             Index.tab[i]=Index.tab[i-1];
             i--;
         }
-        Index.tab[j].key=Qtab;
-        Index.tab[j].endAddress=Qtab + SizeTabKey;
-        Index.tab[j].blockAddress=Q;
+        Index.tab[j].key=PtrKey;
+        Index.tab[j].endAddress=PtrKey + SizeTabKey;
+        Index.tab[j].blockAddress=PtrBlockKey;
         Index.tab[j].isDeletedLogically=0;
     }
 }
-return(File.head);
+return(head);
 }
 
 int main(int argc, char const *argv[]){
@@ -209,7 +261,7 @@ int main(int argc, char const *argv[]){
     printf("2- no\n");
     scanf("%hu", &answer);                                  // "%hu" format specifier for unsigned short
     if(answer == 1)
-        createFile(&file);
+        createfile(&file);
     else
         goto end;
 
@@ -256,7 +308,7 @@ int main(int argc, char const *argv[]){
             }
 
             int SizeTabRest = strlen(TabRest);
-            file.head=insertion(file,TabKey,SizeTabKey,SizeTabRest);
+            file.head=insertion(file.head,TabKey,SizeTabKey,SizeTabRest);
         break;
         
         case 2:
