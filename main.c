@@ -438,34 +438,30 @@ int main(int argc, char const *argv[]){
         case 1:
             // Insert function
             //entrer la cle 
-             printf("Enter the key (Keys does NOT contain spaces) and a maximum size of %d: ", KEY_MAX_SIZE - 1);
+            printf("enter the key");
             scanf("%16s", buffer);
             getchar();
             int i=0;
-            char c=buffer[0],TabKey[KEY_MAX_SIZE],TabRest[BUFFER_MAX_SIZE];
-            while(( c != 0) && (i < KEY_MAX_SIZE)){
+            char TabKey[KEY_MAX_SIZE],TabRest[BUFFER_MAX_SIZE];
+            int N=strlen(buffer);
+            for(int i=0;i<N;i++){
                 TabKey[i]=buffer[i];
-                i++;
-                c=buffer[i];
             }
-            TabKey[i]=0; // "\0"
-            buffer[i]='\0';
+            TabKey[i]='\0'; // "\0"
+            buffer[i]='a';
+            int k=i;
             int SizeTabKey=strlen(TabKey);
-           
-           //insertion Data
-            printf("Enter Data : ");
-            fgets(buffer+SizeTabKey+1,BUFFER_MAX_SIZE-SizeTabKey-3,stdin); 
 
-            printf("Addition Element...");
-            printf("\n-------------------------------------------\n");
-            i=SizeTabKey+1;
-            c=buffer[i];
+           //insertion of the rest of the struct
+            printf("enter the rest of the structs");
+            fgets(buffer+SizeTabKey+1,BUFFER_MAX_SIZE-SizeTabKey-3,stdin); 
             buffer[i]='\0';
             buffer[i+1]='\0';
             int SizeBuffer=strlen(buffer);
+            buffer[k]='\0';
+
             for(int i=SizeTabKey+1;i<SizeBuffer;i++){
                 TabRest[i]=buffer[i];
-                i++;
             }
 
             int SizeTabRest = strlen(TabRest);
