@@ -1,7 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <string.h>
 #include "structs.h"
 block* allocBlock(){
     for(int i = 0; i < 16; i++)
@@ -13,33 +9,28 @@ block* allocBlock(){
     return NULL; 
 }
 
-bool __recuSearch(unsigned short startIndex, unsigned short endIndex, char* key){
+short __recuSearch(unsigned short startIndex, unsigned short endIndex, char* key){
     if(startIndex == endIndex)
         if(Index.tab[startIndex].isDeletedLogically)
-            return false;
+
     
     unsigned short median = (startIndex + endIndex) / 2;
     int strcmpResult = strncmp(key, Index.tab[median].key, KEY_MAX_SIZE);
 
     if(startIndex == endIndex && strcmpResult)
-        return false;
+        return -1;
 
-    if(!strcmpResult)       return true;
+    if(!strcmpResult)       return median;
     if(strcmpResult < 1)
-        __recuSearch(startIndex, median, key);
+        return __recuSearch(startIndex, median, key);
     else
-        __recuSearch(median + 1, endIndex, key);
+        return __recuSearch(median + 1, endIndex, key);
 }
 
-bool searchElement(){
-    // char *key = (char*)malloc(sizeof(KEY_MAX_SIZE + 1));
-    // if(key == NULL){
-    //     fprintf(stderr, "ERROR! [malloc in searchElement]: Couldn't allocate memory")
-    //      exit(EXIT_FAILURE);
-    // }
-    // key = strncpy(key, buffer, KEY_MAX_SIZE);
-    if(Index.IndexSize == 0)                  return false;
-    return __recuSearch(0, Index.IndexSize - 1, buffer);
+
+short searchElement(){
+    if(Index.indexSize == 0)                  return false;
+    return __recuSearch(0, Index.indexSize - 1, buffer);
 }
 
 void createfile(file* file){
@@ -54,6 +45,7 @@ void createfile(file* file){
     printf("Enter the name of the file (max size is 35 characters, spaces NOT allowed): ");
     scanf("%36s", file->header.name);
 }
+
 
 
 fBlock *insertion(fBlock *head,char TabKey[KEY_MAX_SIZE],int SizeTabKey,int SizeTabRest){
@@ -251,6 +243,143 @@ else {
 return(head);
 }
 
+void ElementShift(char** NewElementPos,char* StartCurElementPos,char* EndCurElementPos)
+{
+    //Shift the Element to New Pos
+    while(StartCurElementPos != EndCurElementPos)
+    {
+        **NewElementPos = *StartCurElementPos;
+        *StartCurElementPos = 0;
+        *NewElementPos += sizeof(char);
+        StartCurElementPos += sizeof(char);
+    }
+    **NewElementPos = *StartCurElementPos;
+}
+
+int CalculateSpace(char *StartEspaceAddress, char *EndEspaceAddress){
+    return EndEspaceAddress - StartEspaceAddress; 
+}
+
+// Function to update index array (Delete Element)
+void UpdateIndexDelete(int IndexElementDeleted){
+    for (int ElementIndex = IndexElementDeleted; ElementIndex < Index.indexSize ; ElementIndex++)
+    {
+        Index.tab[ElementIndex] = Index.tab[ElementIndex+1];                         
+    }
+
+    Index.indexSize -- ;
+}
+
+// Function to update File
+void UpdateFileStruct(file* file)
+{
+    fBlock *ftmp = (*file).head ; 
+    while((ftmp)->next != NULL)
+    {
+        ftmp = ftmp->next;
+    }
+}
+
+// Function to delete an element from the file (Logical)
+void DeleteElementLogique(){
+    short indexElement = searchElement();
+    if(indexElement == -1){
+        printf("\nERROR! [Searching for Element]:already deleted or not Existe ");
+        return ;
+    }
+    else
+    {
+        Index.tab[indexElement].isDeletedLogically = true;
+    }
+}
+
+// Function to delete an element from the file (Physique)
+int DeleteElementPhysique(file* file){
+    
+    // Search for the index of the element to be deleted
+    short indexElementDeleted = searchElement();
+ 
+    // Check if the element is not found or already deleted
+    if(indexElementDeleted == -1){
+        printf("\nERROR! [Searching for Element]:already deleted or not Existe");
+        return -1;
+    }
+    else
+    {
+        unsigned short NbElement=-1;
+        int FreeSpace = 0;
+        char *EndCurElementPos,*StartCurElementPos;
+        char *NewElementPos = Index.tab[indexElementDeleted].key;
+        block* blockAddressdataRecover = (Index.tab[indexElementDeleted].blockAddress)->data; //Save Address of Block 
+        for(int i=indexElementDeleted + 1 ; i<Index.indexSize ; i++)
+        {
+            // Verify if the Shift Will be in the Same Block or not
+            if((Index.tab[i].blockAddress)->data != (Index.tab[i-1].blockAddress)->data) // Shift the element into a different block
+            {
+                FreeSpace = (((Index.tab[i-1].blockAddress)->data)->header).EndAddress - NewElementPos; // Calculate the remaining free space in the block
+                // Verify if FreeSpace is sufficient for the Element
+                if(CalculateSpace(Index.tab[i].key,Index.tab[i].endAddress) <= FreeSpace) // FreeSpace is sufficient => Make the Element in the FreeSpace
+                {   
+                    EndCurElementPos = Index.tab[i].endAddress;
+                    StartCurElementPos = Index.tab[i].key;
+                    Index.tab[i].key = NewElementPos;
+                    ElementShift(&NewElementPos,StartCurElementPos,EndCurElementPos);
+                    Index.tab[i].endAddress = NewElementPos;
+                    *NewElementPos += 2*sizeof(char);
+                    NbElement++;
+                }
+                else // FreeSpace isn't sufficient => Make the Element in New Block
+                {
+                    if(NbElement == -1) // element deleted was in base of block and the next element have more space 
+                    {
+                        (((Index.tab[i].blockAddress)->data)->header).NbStructs -= NbElement+1; //Update Number of Element in New Block
+                    }
+                    (((Index.tab[i-1].blockAddress)->data)->header).NbStructs += NbElement; //Update Number of Element in Current Block
+                    
+                    NbElement= 0; 
+                    NewElementPos = blockAddressdataRecover->tab;
+                    EndCurElementPos = Index.tab[i].endAddress;
+                    StartCurElementPos = Index.tab[i].key;
+                    if(NewElementPos == StartCurElementPos)
+                    {
+                        return -1; // Shift Complete (Block no need to do shift on it)
+                    }
+                    Index.tab[i].key = NewElementPos;
+                    ElementShift(&NewElementPos,StartCurElementPos,EndCurElementPos);
+                    Index.tab[i].endAddress = NewElementPos;
+                    *NewElementPos += 2*sizeof(char);
+                }             
+            }
+            else// Shift the element within the same block
+            {
+                EndCurElementPos = Index.tab[i].endAddress;
+                StartCurElementPos = Index.tab[i].key;
+                Index.tab[i].key = NewElementPos;
+                ElementShift(&NewElementPos,StartCurElementPos,EndCurElementPos);
+                Index.tab[i].endAddress = NewElementPos;
+                *NewElementPos += 2*sizeof(char);
+            }
+            // Update the block address for the next iteration
+            blockAddressdataRecover = (Index.tab[i].blockAddress)->data;
+        }
+
+        // Update IndexArray to reflect the deletion
+        UpdateIndexDelete(indexElementDeleted);
+
+        // Update Last Block
+        if ((((Index.tab[Index.indexSize].blockAddress)->data)->header).NbStructs == 0)
+        {
+            ((Index.tab[Index.indexSize].blockAddress)->data)->isUsed = false;
+        }
+
+        // Update nb Element in file header
+        file->header.NbStructs--;
+
+        printf("\nElement Deleted!");
+    }
+}
+
+
 int main(int argc, char const *argv[]){
     unsigned short answer;                                  // Used to get user's answers
     file file;
@@ -313,6 +442,21 @@ int main(int argc, char const *argv[]){
         
         case 2:
             // Delete function
+            printf("Enter the key to Delete Element (Keys does NOT contain spaces) and a maximum size of %d: ", KEY_MAX_SIZE - 1);
+            scanf("%16s", buffer);
+
+            printf("Do you want to delete element definitively \n");
+            printf("1- yes (Physical Delete)\n");
+            printf("2- no (Logical Delete) \n");
+            
+            scanf("%hu", &answer);
+            if(answer == 1){
+                DeleteElementPhysique(&file);
+            }
+            else if(answer == 2)
+            {
+                DeleteElementLogique(&file);
+            }
             break;
 
         case 3:
