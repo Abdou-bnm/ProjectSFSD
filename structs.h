@@ -61,18 +61,17 @@ char defiler(char file[2*BUFFER_MAX_SIZE],int *Endfile)
     {
         *(file+i) = *(file+i+1);
     }
-    *Endfile--;
+    (*Endfile)--;
     return car;
 }
 
 void enfiler(char file[2*BUFFER_MAX_SIZE],char car,int *Endfile)
 {
         *(file + *Endfile) = car;
-        *Endfile++;
+        (*Endfile)++;
 }
 
 // Global variables
 char buffer[BUFFER_MAX_SIZE];                               // A buffer to transfer data between RAM and Memory (used for file manipulation operations).
 block MS[16];                               // The Memory which will contain all the blocks of the linked list and other blocks used by default.
 IndexType Index;                            // An index associated to the file containing useful information for various operations.
-block MS[16];                               // The Memory which will contain all the blocks of the linked list and other blocks used by default.

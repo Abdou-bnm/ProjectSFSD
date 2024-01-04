@@ -241,7 +241,7 @@ fBlock *insertion(fBlock *head,char TabKey[KEY_MAX_SIZE],int SizeTabKey,int Size
             Index.tab[j].isDeletedLogically=0;
         }
     }
-    printf("\nElement Added Successfully!");
+    printf("\nElement Added Successfully!\n");
     return(head);
 }
 //--------------------------------------------------------------------------------------------
@@ -379,10 +379,34 @@ int DeleteElementPhysique(file* file){
         // Update nb Element in file header
         file->header.NbStructs--;
 
-        printf("\nElement Deleted!");
+        printf("\nElement Deleted Successfully!\n");
     }
 }
 ///----------------------------------------------------------------------------------------------------------------
+
+// Print Section
+void __printBlock(block* block){
+    int i = 0, nbStruct = 1;
+    while(block->tab[i] != '\0'){
+        printf("Struct number %d:\n", nbStruct);
+
+        printf("Key: \"%s\".\n", &block->tab[i]);
+        i += strlen(&block->tab[i]) + 1;
+        printf("Key: \"%s\".\n\n", &block->tab[i]);
+        i++;        nbStruct++;
+    }
+}
+
+void printFile(file file){
+    int nbFBlock = 1;
+    while(file.head != NULL){
+        printf("fBlock number %d:\n", nbFBlock);
+        __printBlock(file.head->data);
+        printf("\n-------------------------------------------\n");
+        file.head = file.head->next;
+    }
+}
+///-----------------------------------------------------------------------------
 
 int main(int argc, char const *argv[]){
     unsigned short answer;                                  // Used to get user's answers
@@ -392,6 +416,7 @@ int main(int argc, char const *argv[]){
     printf("Do you want to create a new file?\n");
     printf("1- yes\n");
     printf("2- no\n");
+    printf("Your Answer? : ");
     scanf("%hu", &answer);                                  // "%hu" format specifier for unsigned short
     if(answer == 1)
         createfile(&file);
@@ -406,7 +431,7 @@ int main(int argc, char const *argv[]){
         printf("2- Delete an element\n");
         printf("3- Search for an element\n");
         printf("4- Display contents of file\n");
-
+        printf("Your Answer? : ");
         scanf("%hu", &answer);
         switch (answer)
         {
@@ -430,8 +455,9 @@ int main(int argc, char const *argv[]){
            //insertion Data
             printf("Enter Data : ");
             fgets(buffer+SizeTabKey+1,BUFFER_MAX_SIZE-SizeTabKey-3,stdin); 
-            getchar();
 
+            printf("Addition Element...");
+            printf("\n-------------------------------------------\n");
             i=SizeTabKey+1;
             c=buffer[i];
             buffer[i]='\0';
@@ -455,8 +481,10 @@ int main(int argc, char const *argv[]){
             printf("Do you want to delete element definitively \n");
             printf("1- yes (Physical Delete)\n");
             printf("2- no (Logical Delete) \n");
-            
+            printf("Your Answer? : ");
             scanf("%hu", &answer);
+            printf("Deletion Element...");
+            printf("\n-------------------------------------------\n");
             if(answer == 1){
                 DeleteElementPhysique(&file);
             }
@@ -467,6 +495,8 @@ int main(int argc, char const *argv[]){
             break;
 
         case 3:
+            printf("Searching in the file...");
+            printf("\n-------------------------------------------\n");
             printf("Enter the key to search (Keys does NOT contain spaces) and a maximum size of %d: ", KEY_MAX_SIZE - 1);
             scanf("%16s", buffer);
             if(searchElement())
