@@ -89,6 +89,7 @@ fBlock *insertion(fBlock *head,char TabKey[KEY_MAX_SIZE],int SizeTabKey,int Size
             PtrStart++;
         }
 
+        printf("test 1 done");
         //chercher la premiere cle se trouvant dans l'indexe > a la cle entree par l'utilisateur 
         while(j<Index.IndexSize && strncmp(TabKeyIndex,TabKey,16)<0){
             j++;
@@ -101,9 +102,10 @@ fBlock *insertion(fBlock *head,char TabKey[KEY_MAX_SIZE],int SizeTabKey,int Size
                 PtrStart++;
             }
         }
+        printf("test 2 done");
         if(j>=Index.IndexSize){
             PtrF=Index.tab[j-1].blockAddress;
-    
+            printf("test 3 done");
             if(BUFFER_MAX_SIZE - PtrF->data->header.usedSpace >= SizeTabKey+SizeTabRest+3){
                 //inserer dans l'indexe
                 Index.tab[j].key=(Index.tab[j-1].endAddress + SizeTabRest + 4); //supposant que EndAderess se trouve au niveau du dernier caractere de la cle(+3 pour les 3 "\0" +1 pour se positionner sur la nouvelle case)
@@ -121,6 +123,7 @@ fBlock *insertion(fBlock *head,char TabKey[KEY_MAX_SIZE],int SizeTabKey,int Size
                     i++;
                     PtrStart++;
                 }
+                printf("test 4 done");
             }
             else {
                 //allouer un nv bloc
@@ -145,9 +148,11 @@ fBlock *insertion(fBlock *head,char TabKey[KEY_MAX_SIZE],int SizeTabKey,int Size
                     i++;
                     PtrStart++;
                 }  
+                printf("test 5 done");
             }
         }
         else{
+            printf("test 6 done");
             //pour l'insertion dans l'indexe :
             char *PtrKey=Index.tab[j].key;
             fBlock *PtrBlockKey=Index.tab[j].blockAddress;
@@ -163,7 +168,7 @@ fBlock *insertion(fBlock *head,char TabKey[KEY_MAX_SIZE],int SizeTabKey,int Size
             for(int i=0;i<SizeTabKey+SizeTabRest+3;i++){
             enfiler(file,buffer[i],&Endfile);
             }
-            
+            printf("test 7 done");
             while (Endfile!=0)
             {
                 int Sizefile=Endfile;//stocker la taille de la pile
@@ -175,6 +180,7 @@ fBlock *insertion(fBlock *head,char TabKey[KEY_MAX_SIZE],int SizeTabKey,int Size
                         Qtab--;
                     }
                 }   
+                printf("test 8 done");
                 if(P==Index.tab[j].blockAddress){
                     char *QtabPrime=Qtab, *Ptab=Index.tab->key; //pointeur sur element de fin du block + pointeur sur ou on va inserer la cle
                     int nb=Qtab-Ptab; // nb d'occurrences;
@@ -191,6 +197,7 @@ fBlock *insertion(fBlock *head,char TabKey[KEY_MAX_SIZE],int SizeTabKey,int Size
                     *Ptab=defiler(file,&Endfile);
                         Ptab++;
                     }
+                            printf("test 9 done");
                 }
                 else if(P->next!=NULL){
                 char *Ptab=&(P->data->tab[P->data->header.usedSpace-1]);//pointeur sur le dernier element du block
@@ -214,6 +221,7 @@ fBlock *insertion(fBlock *head,char TabKey[KEY_MAX_SIZE],int SizeTabKey,int Size
                     }
                 }
                 else {
+                            printf("test 10 done");
                 P->next->data=allocBlock();
                 P->next->next=NULL;
                 P=P->next;
@@ -239,6 +247,7 @@ fBlock *insertion(fBlock *head,char TabKey[KEY_MAX_SIZE],int SizeTabKey,int Size
             Index.tab[j].endAddress=PtrKey + SizeTabKey;
             Index.tab[j].blockAddress=PtrBlockKey;
             Index.tab[j].isDeletedLogically=0;
+                    printf("test 11 done");
         }
     }
     printf("\nElement Added Successfully!\n");
