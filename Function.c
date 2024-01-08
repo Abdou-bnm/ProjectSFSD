@@ -1,5 +1,13 @@
 #include "structs.h"
 
+/// Part of Variable Declaration ------------------------------------------------------------------------------------------
+
+// Global variables
+char buffer[BUFFER_MAX_SIZE];               // A buffer to transfer data between RAM and Memory (used for file manipulation operations).
+block MS[16];                               // The Memory which will contain all the blocks of the linked list and other blocks used by default.
+IndexType Index;                            // An index associated to the file containing useful information for various operations.
+/// -----------------------------------------------------------------------------------------------------------------------
+
 char defiler(char file[2*BUFFER_MAX_SIZE],int *Endfile)
 {
     char car = file[0];
@@ -454,3 +462,4 @@ void printFile(file file){
     }
 }
 ///-----------------------------------------------------------------------------
+

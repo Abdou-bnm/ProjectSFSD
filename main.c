@@ -1,6 +1,6 @@
 #include "structs.h"
 
-int main(int argc, char const *argv[]){
+int main(int argc, char const *argv[]) {
     unsigned short answer;                                  // Used to get user's answers
     file file;
     memset(&file, 0, sizeof(file));
