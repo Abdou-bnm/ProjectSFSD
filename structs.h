@@ -23,8 +23,8 @@ typedef struct block{
 
 // The declaration of a single block in memory when used by a the file declared below.
 typedef struct fBlock{
-    block* data;                             // The actual block struct in memory.
-   struct fBlock* next;                            // A pointer to the next element (block) in the linked list.
+    block *data;                             // The actual block struct in memory.
+   struct fBlock *next;                            // A pointer to the next element (block) in the linked list.
 }fBlock;
 
 // The declaration of the file, which will be a sorted linked list, with variable size and no overlap (chevauchement).
@@ -53,15 +53,27 @@ char defiler(char file[2*BUFFER_MAX_SIZE],int *Endfile)
     {
         *(file+i) = *(file+i+1);
     }
-    *Endfile--;
+    (*Endfile)--;
     return car;
 }
 
 void enfiler(char file[2*BUFFER_MAX_SIZE],char car,int *Endfile)
 {
         *(file + *Endfile) = car;
-        *Endfile++;
+        (*Endfile)++;
 }
+char *EndKey(char *Key){
+char *KeyPrime=Key;
+// printf("\nkey:%p",Key);
+
+// printf("\nkeyprime:%p\n",KeyPrime);
+while(*KeyPrime!=0){
+    KeyPrime++;
+//printf("whilekey");
+}
+return(KeyPrime-1);
+}
+
 
 // Global variables
 char buffer[BUFFER_MAX_SIZE];                               // A buffer to transfer data between RAM and Memory (used for file manipulation operations).
@@ -69,49 +81,6 @@ char buffer[BUFFER_MAX_SIZE];                               // A buffer to trans
 //unsigned short indexSize = 0;               // The index of the first free element in the index.
 block MS[16];                               // The Memory which will contain all the blocks of the linked list and other blocks used by default.
 IndexType Index;
-
-
-/*typedef FileAttente {
-    char elements[2*BUFFER_MAX_SIZE];
-    int Startfile , Endfile;
-}FileAttente;
-
-void initialiserFile(struct FileAttente *file) {
-    file->Startfile = -1;
-    file->Endfile = -1;
-}
-
-void enfiler(struct FileAttente *file, int element) {
-    //if (file->fin == MAX_TAILLE - 1) {
-       // printf("La file d'attente est pleine. Impossible d'enfiler.\n");
-    //} 
-    else {
-        if (file->debut == -1) {
-            file->debut = 0;
-        }
-        file->fin++;
-        file->elements[file->fin] = element;
-    }
-}
-
-char defiler(struct FileAttente *file) {
-    char element;
-   // if (estVide(file)) {
-     //   printf("La file d'attente est vide. Impossible de défiler.\n");
-       // return -1;  // Valeur d'erreur, vous pouvez ajuster selon vos besoins.
-    //} 
-    else {
-        element = file->elements[file->debut];
-        if (file->debut == file->fin) {
-            // Il n'y a qu'un seul élément dans la file.
-            initialiserFile(file);
-        } else {
-            file->debut++;
-        }
-        return element;
-    }
-}*/
-
 
 
 
