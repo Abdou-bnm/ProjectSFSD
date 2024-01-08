@@ -56,23 +56,6 @@ typedef struct IndexType{
     unsigned short IndexSize;  
 }IndexType;
 
-char defiler(char file[2*BUFFER_MAX_SIZE],int *Endfile)
-{
-    char car = file[0];
-    for(int i=0;i<99;i++)
-    {
-        *(file+i) = *(file+i+1);
-    }
-    (*Endfile)--;
-    return car;
-}
-
-void enfiler(char file[2*BUFFER_MAX_SIZE],char car,int *Endfile)
-{
-        *(file + *Endfile) = car;
-        (*Endfile)++;
-}
-
 // Global variables
 
 char buffer[BUFFER_MAX_SIZE];               // A buffer to transfer data between RAM and Memory (used for file manipulation operations).
