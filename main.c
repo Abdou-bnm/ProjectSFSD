@@ -156,6 +156,7 @@ fBlock *insertion(fBlock *head,char TabKey[KEY_MAX_SIZE],int SizeTabKey,int Size
             char file[2*BUFFER_MAX_SIZE];
             int Endfile =0; //fin de file et aussi taille de file
 
+
             int N=(SizeTabKey+SizeTabRest+3)-(BUFFER_MAX_SIZE-Index.tab[j].blockAddress->data->header.usedSpace);
             fBlock *P=Index.tab[j].blockAddress; //pointeur sur le block du premier element > a la cle
             char *Qtab =&(P->data->tab[BUFFER_MAX_SIZE - P->data->header.usedSpace -1]); //pointeur sur le dernier element du block du premier element > a la cle
@@ -385,6 +386,20 @@ int DeleteElementPhysique(file* file){
 ///----------------------------------------------------------------------------------------------------------------
 
 // Print Section
+
+
+// Prints the data in decimal and below it the asscoiated character to that ASCII code, similair to hexdump, useful for debugging
+void decimalPrint(char* src, int size){
+    for(int i = 0; i < size; i++)
+        printf("%d\t", src[i]);
+    printf("\n");
+    for(int i = 0; i < size; i++)
+        printf("%c\t", src[i]);
+    printf("\n\n");
+}
+
+// Prints a block, struct by struct
+
 void __printBlock(block* block){
     int i = 0, nbStruct = 1;
     while(block->tab[i] != '\0'){
@@ -392,10 +407,15 @@ void __printBlock(block* block){
 
         printf("Key: \"%s\".\n", &block->tab[i]);
         i += strlen(&block->tab[i]) + 1;
-        printf("Key: \"%s\".\n\n", &block->tab[i]);
-        i++;        nbStruct++;
+
+
+        printf("Data: \"%s\".\n\n", &block->tab[i]);
+        i += strlen(&block->tab[i]) + 1;
+        nbStruct++;
     }
 }
+
+// Prints the entire file, block by block
 
 void printFile(file file){
     int nbFBlock = 1;
