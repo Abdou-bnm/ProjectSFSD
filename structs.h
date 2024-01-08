@@ -1,3 +1,8 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
+
 #define KEY_MAX_SIZE 16
 #define BUFFER_MAX_SIZE 50
 #define INDEX_ELEMENT_MAX 36
@@ -10,8 +15,11 @@ typedef struct fileHeader{
 
 // The declaration of the header of a block.
 typedef struct blockHeader{
-    unsigned short NbStructs;  
-    unsigned short usedSpace;
+    unsigned short NbStructs;               // The number of structs in the block
+    unsigned short usedSpace;               // The number of used bytes in the block
+    char* StartAddress;                     // The address of the 1st element in the block (block.tab)
+    char* EndAddress;                       
+    char* StartFreeSpaceAddress;            // The address of the 1st free element in the block
 }blockHeader;
 
 // The declaration of a single block in memory, which is capable of containing multiple structs.
@@ -35,8 +43,8 @@ typedef struct file{
 
 // The declaration of an element of the "index" array, which contains information needed for search, insertion, ...etc.
 typedef struct indexElement{        
-    char *key;
-    fBlock *blockAddress;                    // Pointer to the block of the element.
+    char *key;                              // Pointer to the first byte of the element.
+    fBlock *blockAddress;                   // Pointer to the block of the element.
     char *endAddress;                       // Pointer to the last byte of the element.
     bool isDeletedLogically;                // Whether the element is deleted logically or not. An element which is deleted logically will be ignored.
 }indexElement;                  
@@ -77,10 +85,53 @@ return(KeyPrime-1);
 
 // Global variables
 char buffer[BUFFER_MAX_SIZE];                               // A buffer to transfer data between RAM and Memory (used for file manipulation operations).
-//indexElement Index[36];                     // An index associated to the file containing useful information for various operations.
-//unsigned short indexSize = 0;               // The index of the first free element in the index.
+block MS[16];                               // The Memory which will contain all the blocks of the linked list and other blocks used by default.
+IndexType Index;                            // An index associated to the file containing useful information for various operations.
 block MS[16];                               // The Memory which will contain all the blocks of the linked list and other blocks used by default.
 IndexType Index;
+
+
+/*typedef FileAttente {
+    char elements[2*BUFFER_MAX_SIZE];
+    int Startfile , Endfile;
+}FileAttente;
+
+void initialiserFile(struct FileAttente *file) {
+    file->Startfile = -1;
+    file->Endfile = -1;
+}
+
+void enfiler(struct FileAttente *file, int element) {
+    //if (file->fin == MAX_TAILLE - 1) {
+       // printf("La file d'attente est pleine. Impossible d'enfiler.\n");
+    //} 
+    else {
+        if (file->debut == -1) {
+            file->debut = 0;
+        }
+        file->fin++;
+        file->elements[file->fin] = element;
+    }
+}
+
+char defiler(struct FileAttente *file) {
+    char element;
+   // if (estVide(file)) {
+     //   printf("La file d'attente est vide. Impossible de défiler.\n");
+       // return -1;  // Valeur d'erreur, vous pouvez ajuster selon vos besoins.
+    //} 
+    else {
+        element = file->elements[file->debut];
+        if (file->debut == file->fin) {
+            // Il n'y a qu'un seul élément dans la file.
+            initialiserFile(file);
+        } else {
+            file->debut++;
+        }
+        return element;
+    }
+}*/
+
 
 
 
