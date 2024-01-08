@@ -77,7 +77,7 @@ void DeleteElementLogique();
 int DeleteElementPhysique(file* file);
 void decimalPrint(char* src, int size);
 void __printBlock(block* block);
-void printFile(file file)
+void printFile(file file);
 /// -----------------------------------------------------------------------------------------------------------------------
 
 /// Part of Variable Declaration ------------------------------------------------------------------------------------------
