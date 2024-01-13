@@ -46,6 +46,12 @@ void createfile(file* file){
     file->header.NbStructs = 0;
     printf("Enter the name of the file (max size is 35 characters, spaces NOT allowed): ");
     scanf("%36s", file->header.name);
+
+    file->RFile = fopen(file->header.name, "r+");
+    if(file->RFile == NULL){
+        fprintf(stderr, "ERROR! [fopen in createfile]: couldn't create permanent file.\nExiting...\n");
+        exit(EXIT_FAILURE);
+    }
 }
 
 /// Search Section

@@ -46,6 +46,7 @@ typedef struct fBlock{
 typedef struct file{
     fileHeader header;                      // The header of the file, containing useful/essential information.
     fBlock *head;                           // The head of the linked list containing all the data of the file.
+    FILE* RFile;                    // The permanent .txt file that the data will be written to
 }file;
 
 // The declaration of an element of the "index" array, which contains information needed for search, insertion, ...etc.
@@ -54,6 +55,7 @@ typedef struct indexElement{
     fBlock *blockAddress;                   // Pointer to the block of the element.
     char *endAddress;                       // Pointer to the last byte of the element.
     bool isDeletedLogically;                // Whether the element is deleted logically or not. An element which is deleted logically will be ignored.
+    unsigned long filePos;
 }indexElement;                  
 
 typedef struct IndexType{
