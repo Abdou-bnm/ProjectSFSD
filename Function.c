@@ -4,7 +4,7 @@
 
 // Global variables
 char buffer[BUFFER_MAX_SIZE];               // A buffer to transfer data between RAM and Memory (used for file manipulation operations).
-block MS[16];                               // The Memory which will contain all the blocks of the linked list and other blocks used by default.
+block MS[Memory_Bloc_Max];                               // The Memory which will contain all the blocks of the linked list and other blocks used by default.
 IndexType Index;                            // An index associated to the file containing useful information for various operations.
 /// -----------------------------------------------------------------------------------------------------------------------
 
@@ -469,3 +469,83 @@ void printFile(file file){
 }
 ///-----------------------------------------------------------------------------
 
+// Headers File
+
+void StockHeaderecFile(file* Recfile, file* file)
+{
+    char filename[] = ".Rec.header"; // Change the filename as needed
+
+    // Open file for writing, create if not exists
+    Recfile = fopen(filename, "a"); // "a" stands for append
+
+    if (Recfile == NULL) {
+        fprintf(stderr, "Error opening file %s\n", filename);
+        return ;
+    }
+
+    // Write fileHeader to the file
+
+    fwrite(&(file->header), sizeof(fileHeader), 1, Recfile);
+    fprintf(Recfile, "\n");
+
+    // Write the BlockHeaders 
+    fBlock *tmp = file->head;
+    while(tmp != NULL) {
+        // Write the BlockHeader structure to the file
+        fwrite(&((tmp->data)->header), sizeof(fileHeader), 1, Recfile);
+        (tmp) = (tmp)->next;
+
+        // Add a newline between each record
+        fprintf(Recfile, "\n");
+    }
+
+    // Close the file
+    fclose(Recfile);
+}
+
+void ReStockHeaderecFile(file* Recfile, file* file)
+{
+    char filename[] = ".Rec.header"; // Change the filename as needed
+
+    // Open file for reading
+    Recfile = fopen(filename, "r");
+
+    if (Recfile == NULL) {
+        fprintf(stderr, "Error opening file %s\n", filename);
+        return ;
+    }
+
+    // Read fileHeader records from the file
+    fread(&(file->header), sizeof(fileHeader), 1, Recfile);
+    fseek(Recfile, 1, SEEK_CUR);
+    
+    int i=0;
+    file->head = (fBlock*)malloc(sizeof(fBlock));
+    file->head->data = allocBlock();
+
+    while(Recfile == EOF) {
+        // Write the BlockHeader structure to the file
+        while(MS[i].header.NbStructs != 0 )
+        {
+            if(i < Memory_Bloc_Max)
+                i++;
+            else
+                printf("ERROR! [Opening File]:Full Memory ");
+        }
+
+        // Read the newline character between records
+        fseek(Recfile, 1, SEEK_CUR);
+    }
+
+    // Close the file
+    fclose(Recfile);
+
+    // Remove the Recfile
+    if (remove(filename) != 0) {
+        fprintf(stderr, "Error deleting file %s\n", filename);
+        return ;
+    }
+
+    printf("File %s deleted successfully\n", filename);
+
+}

@@ -9,6 +9,7 @@
 #define KEY_MAX_SIZE 16
 #define BUFFER_MAX_SIZE 50
 #define INDEX_ELEMENT_MAX 36
+#define Memory_Bloc_Max 16
 
 /// Part of Struct Declaration -----------------------------------------------------------------------------------
 
@@ -89,7 +90,7 @@ void printFile(file file);
 
 // Global variables
 extern char buffer[BUFFER_MAX_SIZE];               // A buffer to transfer data between RAM and Memory (used for file manipulation operations).
-extern block MS[16];                               // The Memory which will contain all the blocks of the linked list and other blocks used by default.
+extern block MS[Memory_Bloc_Max];                               // The Memory which will contain all the blocks of the linked list and other blocks used by default.
 extern IndexType Index;                            // An index associated to the file containing useful information for various operations.
 /// -----------------------------------------------------------------------------------------------------------------------
 
