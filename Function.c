@@ -471,12 +471,13 @@ void printFile(file file){
 
 // Headers File
 
-void StockHeaderecFile(file* Recfile, file* file)
+void StockHeaderecFile(FILE* Recfile, file* file)
 {
-    char filename[] = ".Rec.header"; // Change the filename as needed
+    char filename[36] ; // Change the filename as needed
+    snprintf(filename,"%s.txt.header",(file->header).name);
 
     // Open file for writing, create if not exists
-    Recfile = fopen(filename, "a"); // "a" stands for append
+    Recfile = fopen(filename, "wb"); // 'w' searches file. if the file exists . its contents are overwritten . if the file doesn't existe . a new file is created.
 
     if (Recfile == NULL) {
         fprintf(stderr, "Error opening file %s\n", filename);
@@ -503,49 +504,35 @@ void StockHeaderecFile(file* Recfile, file* file)
     fclose(Recfile);
 }
 
-void ReStockHeaderecFile(file* Recfile, file* file)
+void ReStockHeaderecFile(FILE* Recfile, file* file)
 {
-    char filename[] = ".Rec.header"; // Change the filename as needed
+    char filename[36] ;
+    snprintf(filename,"%s.txt.header",(file->header).name); // Change the filename as needed
 
     // Open file for reading
-    Recfile = fopen(filename, "r");
+    Recfile = fopen(filename, "rb");
 
     if (Recfile == NULL) {
         fprintf(stderr, "Error opening file %s\n", filename);
         return ;
     }
 
-    // Read fileHeader records from the file
+    // Read fileHeader from the file
     fread(&(file->header), sizeof(fileHeader), 1, Recfile);
     fseek(Recfile, 1, SEEK_CUR);
     
     int i=0;
-    file->head = (fBlock*)malloc(sizeof(fBlock));
-    file->head->data = allocBlock();
 
-    while(Recfile == EOF) {
+    fBlock *tmp = file->head;
+    while(tmp != NULL) {
         // Write the BlockHeader structure to the file
-        while(MS[i].header.NbStructs != 0 )
-        {
-            if(i < Memory_Bloc_Max)
-                i++;
-            else
-                printf("ERROR! [Opening File]:Full Memory ");
-        }
+        fread(&((tmp->data)->header), sizeof(fileHeader), 1, Recfile);
+        (tmp) = (tmp)->next;
 
-        // Read the newline character between records
+        // Add a newline between each record
         fseek(Recfile, 1, SEEK_CUR);
     }
 
     // Close the file
     fclose(Recfile);
-
-    // Remove the Recfile
-    if (remove(filename) != 0) {
-        fprintf(stderr, "Error deleting file %s\n", filename);
-        return ;
-    }
-
-    printf("File %s deleted successfully\n", filename);
-
 }
