@@ -14,9 +14,9 @@
 
 // The declaration of the header of a file.
 typedef struct fileHeader{
-    unsigned int nbBlocks;
-    unsigned int NbStructs;
-    char name[36];
+    unsigned int nbBlocks;                  // Number of blocks used by file
+    unsigned int NbStructs;                 // Number of structs in file
+    char name[36];                          // Name of file, no path included
 }fileHeader;
 
 // The declaration of the header of a block.
@@ -31,9 +31,7 @@ typedef struct blockHeader{
 // The declaration of a single block in memory, which is capable of containing multiple structs.
 typedef struct block{
     blockHeader header;                     // The header of the block, containing useful/essential information.
-
     char tab[BUFFER_MAX_SIZE];              // The actual memory of the block.
-
     bool isUsed;                            // A boolean that indicates the availability of the block, needed for insertion into a new block.
 }block;
 
@@ -47,7 +45,8 @@ typedef struct fBlock{
 typedef struct file{
     fileHeader header;                      // The header of the file, containing useful/essential information.
     fBlock *head;                           // The head of the linked list containing all the data of the file.
-    FILE* RFile;                    // The permanent .txt file that the data will be written to
+    FILE* RFile;                            // The permanent .txt file that the data will be written to
+    FILE* HFile;                            // File where we will store file and blocks headers, raw binary data
 }file;
 
 // The declaration of an element of the "index" array, which contains information needed for search, insertion, ...etc.
@@ -56,7 +55,7 @@ typedef struct indexElement{
     fBlock *blockAddress;                   // Pointer to the block of the element.
     char *endAddress;                       // Pointer to the last byte of the element.
     bool isDeletedLogically;                // Whether the element is deleted logically or not. An element which is deleted logically will be ignored.
-    unsigned long filePos;
+    unsigned long filePos;                  // Position of 1st character of key in RFile, providing that the 1st postion in RFile is 0. 
 }indexElement;                  
 
 typedef struct IndexType{
