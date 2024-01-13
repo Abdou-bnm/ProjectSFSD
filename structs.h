@@ -14,6 +14,7 @@
 
 // The declaration of the header of a file.
 typedef struct fileHeader{
+    unsigned int nbBlocks;
     unsigned int NbStructs;
     char name[36];
 }fileHeader;
