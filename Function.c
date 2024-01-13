@@ -339,6 +339,31 @@ void DeleteElementLogique(){
     }
 }
 
+// Delete in RFile
+void RFile_Delete(FILE *file ,short *elementIndexPos, unsigned long elementSize)
+{
+    if(elementIndexPos == -1){                      // Error handling
+        fprintf(stderr, "ERROR! [searchElement in RFile_insert]: Couldn't find element in index.\nreturning...\n");
+        return;
+    }
+
+    if(fseek(file, 0, SEEK_END)){                   // Error handling
+        fprintf(stderr, "ERROR! [fseek 1 in RFile_Delete]: return a non-zero value.\nExiting...\n");
+        exit(EXIT_FAILURE);
+    }
+    
+    if(elementIndexPos == Index.IndexSize - 1){     // In case the element is the last in index, so no shifting needed
+        fseek(file,-(Index.tab->endAddress - Index.tab->key),SEEK_END);
+        fputc(EOF,file);
+        return;
+    }
+
+    // In case Not the last element in index, so there is shifting needed
+
+    
+
+}
+
 // Function to delete an element from the file (Physique)
 int DeleteElementPhysique(file* file){
     
@@ -487,7 +512,6 @@ void StockHeaderecFile(FILE* Recfile, file* file)
     // Write fileHeader to the file
 
     fwrite(&(file->header), sizeof(fileHeader), 1, Recfile);
-    fprintf(Recfile, "\n");
 
     // Write the BlockHeaders 
     fBlock *tmp = file->head;
@@ -496,8 +520,6 @@ void StockHeaderecFile(FILE* Recfile, file* file)
         fwrite(&((tmp->data)->header), sizeof(fileHeader), 1, Recfile);
         (tmp) = (tmp)->next;
 
-        // Add a newline between each record
-        fprintf(Recfile, "\n");
     }
 
     // Close the file
@@ -519,7 +541,6 @@ void ReStockHeaderecFile(FILE* Recfile, file* file)
 
     // Read fileHeader from the file
     fread(&(file->header), sizeof(fileHeader), 1, Recfile);
-    fseek(Recfile, 1, SEEK_CUR);
     
     int i=0;
 
@@ -529,8 +550,6 @@ void ReStockHeaderecFile(FILE* Recfile, file* file)
         fread(&((tmp->data)->header), sizeof(fileHeader), 1, Recfile);
         (tmp) = (tmp)->next;
 
-        // Add a newline between each record
-        fseek(Recfile, 1, SEEK_CUR);
     }
 
     // Close the file
