@@ -499,7 +499,7 @@ void printFile(file file){
 void StockHeaderecFile(FILE* Recfile, file* file)
 {
     char filename[36] ; // Change the filename as needed
-    snprintf(filename,"%s.header",(file->header).name);
+    snprintf(filename,".%s.header",(file->header).name);
 
     // Open file for writing, create if not exists
     Recfile = fopen(filename, "wb"); // 'w' searches file. if the file exists . its contents are overwritten . if the file doesn't existe . a new file is created.
@@ -529,7 +529,7 @@ void StockHeaderecFile(FILE* Recfile, file* file)
 void ReStockHeaderecFile(FILE* Recfile, file* file)
 {
     char filename[36] ;
-    snprintf(filename,"%s.header",(file->header).name); // Change the filename as needed
+    snprintf(filename,".%s.header",(file->header).name); // Change the filename as needed
 
     // Open file for reading
     Recfile = fopen(filename, "rb");
