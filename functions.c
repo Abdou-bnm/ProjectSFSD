@@ -25,13 +25,192 @@ void enfiler(char file[2*BUFFER_MAX_SIZE],char car,int *Endfile)
         (*Endfile)++;
 }
 
+block* allocBlock(){
+    for(int i = 0; i < 16; i++)
+        if(MS[i].isUsed == 0){
+            MS[i].isUsed = 1;
+            return &MS[i];
+        }
+    
+    return NULL; 
+}
+
+void loadHeader(file* file){
+    char *fileName = (char*)malloc(70);
+    if(fileName == NULL){
+        fprintf(stderr, "ERROR! [malloc 1 in loadHeader]: Couldn't allocate memory for fileName.\nExiting...\n");
+        exit(EXIT_FAILURE);
+    }
+    memset(fileName, 0, 70);
+    sprintf(fileName, ".%s.header", file->header.name);
+    
+    file->HFile = fopen(fileName, "rb");
+    if(file->HFile == NULL){
+        fprintf(stderr, "ERROR! [fopen in leadHeader]: Couldn't open header file \"%s\".\nExiting...\n", fileName);
+        exit(EXIT_FAILURE);
+    }
+
+    free(fileName);
+    fread(&(file->header), sizeof(fileHeader), 1, file->HFile);
+
+    file->head = (fBlock*) malloc(sizeof(fBlock));
+    if(file->head == NULL){
+        fprintf(stderr, "ERROR! [malloc 2 in loadHeader]: Couldn't allocate memory for file->head.\nExiting...\n");
+        exit(EXIT_FAILURE);
+    }
+    file->head->data = NULL;
+    file->head->next = NULL;
+    fBlock *fblck = file->head;
+    for(unsigned int i = 0; i < file->header.nbBlocks - 1; i++){        // - 1 because the initial fBlock was made outside of the loop
+        fblck = fblck->next;
+        fblck = (fBlock*)malloc(sizeof(fBlock));
+        if(file->head == NULL){
+            fprintf(stderr, "ERROR! [malloc 3 in loadHeader]: Couldn't allocate memory for fblck.\nExiting...\n");
+            exit(EXIT_FAILURE);
+        }
+        fblck->data = NULL;
+        fblck->next = NULL;
+    }
+
+    if(fclose(file->HFile))
+        fprintf(stderr, "ERROR! [fclose in loadHeader]: returned a non-zero value.\nContinuing...\n");
+}
+
+void __setBlockAtStart(block* blck){                    // Sets the block values when first allocated.
+    blck->header.EndAddress = blck->tab;
+    blck->header.StartAddress = blck->tab;
+    blck->header.StartFreeSpaceAddress = blck->tab;
+    blck->header.NbStructs = 0;
+    blck->header.usedSpace = 0;
+    memset(blck->tab, 0, BUFFER_MAX_SIZE);
+}
+
+void fileOpen(file* file){
+    loadHeader(file);
+    
+    file->RFile = fopen(file->header.name, "rb+");
+    if(file->RFile == NULL){
+        fprintf(stderr, "ERROR! [fopen in fileOpen]: Couldn't open data file \"%s\".\nExiting...\n", file->header.name);
+        exit(EXIT_FAILURE);
+    }
+
+    char c;
+    int size, tmp = 0;
+    fBlock *fblck = file->head;
+
+    while(fblck != NULL){
+        if(fblck->data == NULL){                        // In case the current block is not already set-up, or else we use the current block
+            fblck->data = allocBlock();
+            if(fblck->data == NULL){
+                fprintf(stderr, "ERROR! [allocBlock in fileOpen]: Couldn't allocate block to use.\nReturning...\n");
+                return;
+            }
+            __setBlockAtStart(fblck->data);
+        }
+
+        size = 0;
+        do{
+            c = fgetc(file->RFile);
+            if(c == EOF){
+                fprintf(stderr, "ERROR! [fgetc in fileOpen]: EOF reached before an expected end of struct '\\n'.\nReturning...\n");
+                return;
+            }
+            size++;
+        }while(c != '\n');
+        
+        fseek(file->RFile, - 1 * size, SEEK_CUR);
+        
+        if(size > BUFFER_MAX_SIZE - fblck->data->header.usedSpace){
+            fblck = fblck->next;
+            continue;                                   // Go to the next iteration
+        }
+
+        for(int i = 0; i < size; i++){
+            c = fgetc(file->RFile);
+            
+            switch(c){
+                case ':':
+                    fblck->data->header.StartFreeSpaceAddress[i] = '\0';
+                    break;
+                
+                case '\n':                              // character end of struct, change it to '#' if you are still using it, chahinez.        
+                    fblck->data->header.StartFreeSpaceAddress[i] = '\0';
+                    break;
+
+                default:
+                    fblck->data->header.StartFreeSpaceAddress[i] = c;
+                    break;
+            }
+        }
+
+        fblck->data->header.EndAddress += size;
+        fblck->data->header.StartFreeSpaceAddress += size;
+        fblck->data->header.NbStructs++;
+        fblck->data->header.usedSpace += size;
+
+        do{                                             // In case of some padding
+            c = fgetc(file->RFile);
+        }while(c == '\0');
+        
+        if(c == EOF){                                   // In case of reaching EOF, which means we completed the entire RFile
+            printf("Copying RFile completed, EOF reached after end of struct.\nReturning...\n");
+            return;
+        }
+    }                                                   // Else, we go into another iteration
+}
+
+void createfile(file* file){
+    file->head = (fBlock*)malloc(sizeof(fBlock));
+    file->head->data = allocBlock();
+    if(file->head->data == NULL){
+        fprintf(stderr, "\nERROR! [allocBlock in createfile]: No space to allocate block.\nExiting...\n");
+        exit(EXIT_FAILURE);
+    }
+    file->head->next = NULL;
+    file->header.NbStructs = 0;
+    printf("Enter the name of the file (max size is 35 characters, spaces NOT allowed, CASE SENSITIVE): ");
+    scanf("%36s", file->header.name);
+
+    file->RFile = fopen(file->header.name, "w+");
+    if(file->RFile == NULL){
+        fprintf(stderr, "ERROR! [fopen in createfile]: couldn't create permanent file.\nExiting...\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+/// Search Section
+short __recuSearch(unsigned short startIndex, unsigned short endIndex, char* key){
+    if(startIndex == endIndex)
+        if(Index.tab[startIndex].isDeletedLogically)
+            return -1;
+    
+    unsigned short median = (startIndex + endIndex) / 2;
+    int strcmpResult = strncmp(key, Index.tab[median].key, KEY_MAX_SIZE);
+
+    if(startIndex == endIndex && strcmpResult)
+        return -1;
+
+    if(!strcmpResult)       return median;
+    if(strcmpResult < 1)
+        return __recuSearch(startIndex, median, key);
+    else
+        return __recuSearch(median + 1, endIndex, key);
+}
+
+
+short searchElement(){
+    if(Index.IndexSize == 0)                  return false;
+    return __recuSearch(0, Index.IndexSize - 1, buffer);
+}
+//-------------------------------------------------------------------------------------------
+// insertion Section
+
 // A function to insert element "element" into the permanent "RFile" in the correct position and changing the position info in Index
 void RFile_insert(FILE* file, char* element, unsigned long elementSize){
     memset(buffer, 0, sizeof(buffer));              // Clear the current buffer
     memcpy(buffer, element, elementSize);           // Copy the insered element into buffer
-    buffer[elementSize - 1] = '\0';                 // Change the last '#' to '\0'
 
-    short elementIndexPos = searchElement();
+    short elementIndexPos = searchElement(), cpt = 0;
     if(elementIndexPos == -1){                      // Error handling
         fprintf(stderr, "ERROR! [searchElement in RFile_insert]: Couldn't find element in index.\nreturning...\n");
         return;
@@ -44,9 +223,15 @@ void RFile_insert(FILE* file, char* element, unsigned long elementSize){
     
     if(elementIndexPos == Index.IndexSize - 1){     // In case the element is the last in index, so no shifting needed
         for(int i = 0; i < elementSize; i++){
+            if(buffer[i] == '\0'){                  // Add ':' and '\n' instead of '\0' to organise RFile
+                if(cpt % 2)
+                    fputc('\n', file);
+                else
+                    fputc(':', file);
+                cpt++;
+                continue;
+            }
             fputc(buffer[i], file);                 // Copy contents of buffer to file
-            if(buffer[i] == '\0')                   // Add '\n' after '\0' to organise RFile
-                fputc('\n', file);
         }
         return;
     }
@@ -82,14 +267,20 @@ void RFile_insert(FILE* file, char* element, unsigned long elementSize){
     Index.tab[elementIndexPos + 1].filePos += elementSize;                              // Changing the filePos of the next element in the Index
 
     if(fseek(file, Index.tab[elementIndexPos].filePos, SEEK_SET)){                      // Error handling
-        fprintf(stderr, "ERROR! [fseek 3 in RFile_insert]: return a non-zero value.\nExiting...\n");
+        fprintf(stderr, "ERROR! [fseek 3 in RFile_insert]: returned a non-zero value.\nExiting...\n");
         exit(EXIT_FAILURE);
     }
     
-    err = fwrite(buffer, sizeof(char), elementSize, file);                              // Writing the new element
-    if(err != elementSize){                                                             // Error handling
-        fprintf(stderr, "ERROR! [fwrite 1 in RFile_insert]: expected to read %li but got %li", elementSize, err);
-        exit(EXIT_FAILURE);
+    for(int i = 0; i < elementSize; i++){                                               // Add ':' and '\n' instead of '\0' to organise RFile
+        if(buffer[i] == '\0'){                   
+                if(cpt % 2)
+                    fputc('\n', file);
+                else
+                    fputc(':', file);
+                cpt++;
+                continue;
+            }
+        fputc(buffer[i], file);                                                         // Writing the new element
     }
 
     err = fwrite(tmp, sizeof(char), space, file);                                       // Writing the rest of the old elements (shifted ones)
@@ -101,62 +292,6 @@ void RFile_insert(FILE* file, char* element, unsigned long elementSize){
     free(tmp);                                                                          // Free the tmp buffer
 }
 
-block* allocBlock(){
-    for(int i = 0; i < 16; i++)
-        if(MS[i].isUsed == 0){
-            MS[i].isUsed = 1;
-            return &MS[i];
-        }
-    
-    return NULL; 
-}
-
-void createfile(file* file){
-    file->head = (fBlock*)malloc(sizeof(fBlock));
-    file->head->data = allocBlock();
-    if(file->head->data == NULL){
-        fprintf(stderr, "\nERROR! [allocBlock in createfile]: No space to allocate block.\nExiting...\n");
-        exit(EXIT_FAILURE);
-    }
-    file->head->next = NULL;
-    file->header.NbStructs = 0;
-    printf("Enter the name of the file (max size is 35 characters, spaces NOT allowed): ");
-    scanf("%36s", file->header.name);
-
-    file->RFile = fopen(file->header.name, "r+");
-    if(file->RFile == NULL){
-        fprintf(stderr, "ERROR! [fopen in createfile]: couldn't create permanent file.\nExiting...\n");
-        exit(EXIT_FAILURE);
-    }
-}
-
-/// Search Section
-short __recuSearch(unsigned short startIndex, unsigned short endIndex, char* key){
-    if(startIndex == endIndex)
-        if(Index.tab[startIndex].isDeletedLogically)
-            return -1;
-    
-    unsigned short median = (startIndex + endIndex) / 2;
-    int strcmpResult = strncmp(key, Index.tab[median].key, KEY_MAX_SIZE);
-
-    if(startIndex == endIndex && strcmpResult)
-        return -1;
-
-    if(!strcmpResult)       return median;
-    if(strcmpResult < 1)
-        return __recuSearch(startIndex, median, key);
-    else
-        return __recuSearch(median + 1, endIndex, key);
-}
-
-
-short searchElement(){
-    if(Index.IndexSize == 0)                  return false;
-    return __recuSearch(0, Index.IndexSize - 1, buffer);
-}
-//-------------------------------------------------------------------------------------------
-
-/// insertion Section
 fBlock *insertion(fBlock *head,char TabKey[KEY_MAX_SIZE],int SizeTabKey,int SizeTabRest){
 
     char TabKeyIndex[KEY_MAX_SIZE];
@@ -363,7 +498,6 @@ fBlock *insertion(fBlock *head,char TabKey[KEY_MAX_SIZE],int SizeTabKey,int Size
     return(head);
 }
 //--------------------------------------------------------------------------------------------
-
 // Suppression Section
 void ElementShift(char** NewElementPos,char* StartCurElementPos,char* EndCurElementPos)
 {

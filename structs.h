@@ -38,7 +38,7 @@ typedef struct block{
 // The declaration of a single block in memory when used by a the file declared below.
 typedef struct fBlock{
     block* data;                            // The actual block struct in memory.
-   struct fBlock* next;                     // A pointer to the next element (block) in the linked list.
+    struct fBlock* next;                    // A pointer to the next element (block) in the linked list.
 }fBlock;
 
 // The declaration of the file, which will be a sorted linked list, with variable size and no overlap (chevauchement).
@@ -83,6 +83,9 @@ int DeleteElementPhysique(file* file);
 void decimalPrint(char* src, int size);
 void __printBlock(block* block);
 void printFile(file file);
+void RFile_insert(FILE* file, char* element, unsigned long elementSize);
+void __setBlockAtStart(block* blck);
+void fileOpen(file* file);
 /// -----------------------------------------------------------------------------------------------------------------------
 
 /// Part of Variable Declaration ------------------------------------------------------------------------------------------
