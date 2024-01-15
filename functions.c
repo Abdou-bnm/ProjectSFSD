@@ -221,7 +221,14 @@ void RFile_insert(FILE* file, char* element, unsigned long elementSize){
         exit(EXIT_FAILURE);
     }
     
+    long maxPos = ftell(file), space, err;          // Last position in file
+    if(maxPos == -1){                               // Error handling
+        fprintf(stderr, "ERROR! [ftell in RFile_insert]: returned -1.\nExiting...\n");
+        exit(EXIT_FAILURE);
+    }
+    
     if(elementIndexPos == Index.IndexSize - 1){     // In case the element is the last in index, so no shifting needed
+        Index.tab[elementIndexPos].filePos = maxPos;
         for(int i = 0; i < elementSize; i++){
             if(buffer[i] == '\0'){                  // Add ':' and '\n' instead of '\0' to organise RFile
                 if(cpt % 2)
@@ -237,12 +244,6 @@ void RFile_insert(FILE* file, char* element, unsigned long elementSize){
     }
 
     // In case Not the last element in index, so there is shifting needed
-
-    long maxPos = ftell(file), space, err;                                              // Last position in file
-    if(maxPos == -1){                                                                   // Error handling
-        fprintf(stderr, "ERROR! [ftell in RFile_insert]: returned -1.\nExiting...\n");
-        exit(EXIT_FAILURE);
-    }
     space = maxPos - Index.tab[elementIndexPos + 1].filePos;                            // Number of bytes that will be shifted
     
     char* tmp = (char*)malloc(space);                                                   // Temporary buffer to hold the shifted string
