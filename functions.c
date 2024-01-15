@@ -4,7 +4,7 @@
 
 // Global variables
 char buffer[BUFFER_MAX_SIZE];               // A buffer to transfer data between RAM and Memory (used for file manipulation operations).
-block MS[16];                               // The Memory which will contain all the blocks of the linked list and other blocks used by default.
+block MS[Memory_Bloc_Max];                               // The Memory which will contain all the blocks of the linked list and other blocks used by default.
 IndexType Index;                            // An index associated to the file containing useful information for various operations.
 /// -----------------------------------------------------------------------------------------------------------------------
 
@@ -550,6 +550,41 @@ void DeleteElementLogique(){
     }
 }
 
+// Delete in RFile
+void RFile_Delete(FILE *file ,short *elementIndexPos, unsigned long elementSize)
+{
+    if(elementIndexPos == -1){                      // Error handling
+        fprintf(stderr, "ERROR! [searchElement in RFile_insert]: Couldn't find element in index.\nreturning...\n");
+        return;
+    }
+
+    if(fseek(file, 0, SEEK_END)){                   // Error handling
+        fprintf(stderr, "ERROR! [fseek 1 in RFile_Delete]: return a non-zero value.\nExiting...\n");
+        exit(EXIT_FAILURE);
+    }
+    
+    if(elementIndexPos == Index.IndexSize - 1){     // In case the element is the last in index, so no shifting needed
+        fseek(file,-(Index.tab->endAddress - Index.tab->key),SEEK_END);
+        fputc(-1,file);
+        return;
+    }
+
+    // In case Not the last element in index, so there is shifting needed
+
+    unsigned short pos = (Index.tab->filePos );
+    unsigned long taille = (Index.tab->endAddress - Index.tab->key);
+    char c;
+    fseek(file, pos + taille, SEEK_SET);
+    // Shift the remaining characters to the left
+    while ((c = fgetc(file)) != EOF) {
+        fseek(file, ftell(file) - 1, SEEK_SET);
+        fputc('\0', file);
+        fseek(file, ftell(file) - (taille+1), SEEK_SET);
+        fputc(c, file);
+        fseek(file, ftell(file) + taille, SEEK_SET);
+    }
+}
+
 // Function to delete an element from the file (Physique)
 int DeleteElementPhysique(file* file){
     
@@ -680,3 +715,64 @@ void printFile(file file){
 }
 ///-----------------------------------------------------------------------------
 
+// Headers File
+
+void StockHeaderecFile(FILE* Recfile, file* file)
+{
+    char filename[36] ; // Change the filename as needed
+    snprintf(filename,".%s.header",(file->header).name);
+
+    // Open file for writing, create if not exists
+    Recfile = fopen(filename, "wb"); // 'w' searches file. if the file exists . its contents are overwritten . if the file doesn't existe . a new file is created.
+
+    if (Recfile == NULL) {
+        fprintf(stderr, "Error opening file %s\n", filename);
+        return ;
+    }
+
+    // Write fileHeader to the file
+
+    fwrite(&(file->header), sizeof(fileHeader), 1, Recfile);
+
+    // Write the BlockHeaders 
+    fBlock *tmp = file->head;
+    while(tmp != NULL) {
+        // Write the BlockHeader structure to the file
+        fwrite(&((tmp->data)->header), sizeof(fileHeader), 1, Recfile);
+        (tmp) = (tmp)->next;
+
+    }
+
+    // Close the file
+    fclose(Recfile);
+}
+
+void ReStockHeaderecFile(FILE* Recfile, file* file)
+{
+    char filename[36] ;
+    snprintf(filename,".%s.header",(file->header).name); // Change the filename as needed
+
+    // Open file for reading
+    Recfile = fopen(filename, "rb");
+
+    if (Recfile == NULL) {
+        fprintf(stderr, "Error opening file %s\n", filename);
+        return ;
+    }
+
+    // Read fileHeader from the file
+    fread(&(file->header), sizeof(fileHeader), 1, Recfile);
+    
+    int i=0;
+
+    fBlock *tmp = file->head;
+    while(tmp != NULL) {
+        // Write the BlockHeader structure to the file
+        fread(&((tmp->data)->header), sizeof(fileHeader), 1, Recfile);
+        (tmp) = (tmp)->next;
+
+    }
+
+    // Close the file
+    fclose(Recfile);
+}
