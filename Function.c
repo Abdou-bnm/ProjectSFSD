@@ -354,14 +354,24 @@ void RFile_Delete(FILE *file ,short *elementIndexPos, unsigned long elementSize)
     
     if(elementIndexPos == Index.IndexSize - 1){     // In case the element is the last in index, so no shifting needed
         fseek(file,-(Index.tab->endAddress - Index.tab->key),SEEK_END);
-        fputc(EOF,file);
+        fputc(-1,file);
         return;
     }
 
     // In case Not the last element in index, so there is shifting needed
 
-    
-
+    unsigned short pos = (Index.tab->filePos );
+    unsigned long taille = (Index.tab->endAddress - Index.tab->key);
+    char c;
+    fseek(file, pos + taille, SEEK_SET);
+    // Shift the remaining characters to the left
+    while ((c = fgetc(file)) != EOF) {
+        fseek(file, ftell(file) - 1, SEEK_SET);
+        fputc('\0', file);
+        fseek(file, ftell(file) - (taille+1), SEEK_SET);
+        fputc(c, file);
+        fseek(file, ftell(file) + taille, SEEK_SET);
+    }
 }
 
 // Function to delete an element from the file (Physique)
