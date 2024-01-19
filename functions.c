@@ -626,7 +626,7 @@ void DeleteElementLogique()
 }
 
 // Delete in RFile
-void RFile_Delete(FILE *file, short *elementIndexPos, unsigned long elementSize)
+void RFile_Delete(FILE *file, short elementIndexPos)
 {
     if (elementIndexPos == -1)
     { // Error handling
@@ -649,7 +649,7 @@ void RFile_Delete(FILE *file, short *elementIndexPos, unsigned long elementSize)
 
     // In case Not the last element in index, so there is shifting needed
 
-    unsigned short pos = (Index.tab->filePos);
+    unsigned short pos = (Index.tab[elementIndexPos].filePos);
     unsigned long taille = (Index.tab->endAddress - Index.tab->key);
     char c;
     fseek(file, pos + taille, SEEK_SET);
@@ -680,7 +680,7 @@ void RFile_Delete(FILE *file, short *elementIndexPos, unsigned long elementSize)
 }
 
 // Function to delete an element from the file (Physique)
-int DeleteElementPhysique(file *file,File *Rfile,)
+int DeleteElementPhysique(file *file,FILE *Rfile)
 {
 
     // Search for the index of the element to be deleted
@@ -764,7 +764,7 @@ int DeleteElementPhysique(file *file,File *Rfile,)
         file->header.NbStructs--;
 
         // Delete in the Rfile  
-        RFile_Delete(Rfile,Index.tab[indexElementDeleted].filePos,(Index.tab[indexElementDeleted].endAddress - Index.tab[indexElementDeleted].key));
+        RFile_Delete(Rfile,indexElementDeleted);
 
         printf("\nElement Deleted Successfully!\n");
     }
