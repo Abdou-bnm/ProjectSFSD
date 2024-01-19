@@ -37,6 +37,34 @@ block *allocBlock()
     return NULL;
 }
 
+// Update the filePos in indexElement struct of each element of index using the RFile.
+void updateIndexFPos(FILE* file){
+    if(fseek(file, 0, SEEK_SET)){
+        fprintf(stderr, "ERROR! [fseek in file]: returned a non-zero value.\nExiting...\n");
+        exit(EXIT_FAILURE);
+    }
+
+    short curPos;
+    char c;
+
+    for(int i = 0; i < Index.IndexSize; i++){
+        if(Index.tab[i].isDeletedLogically)         // if element is deleted logically, it won't be in the RFile
+            continue;
+
+        curPos = ftell(file);                       // Get the current position in RFile, which will be Index.tab[i].filePos
+        if(curPos == -1){                           // Error Handling
+            fprintf(stderr, "ERROR! [ftell in file]: returned -1.\nExiting...\n");
+            exit(EXIT_FAILURE);
+        }
+
+        Index.tab[i].filePos = curPos;
+        while(c != '\n')                            // Avancing until the end of the current element
+            fgetc(file);
+        
+        fgetc(file);                                // One more time to set it to the start of the next element
+    }
+}
+
 void loadHeader(file *file)
 {
     char *fileName = (char *)malloc(70);
@@ -98,21 +126,25 @@ void fileOpen(file *file)
 {
     loadHeader(file);
 
-    file->RFile = fopen(file->header.name, "rb+");
-    if (file->RFile == NULL)
-    {
+    file->RFile = fopen(file->header.name, "r+");
+    if (file->RFile == NULL){
         fprintf(stderr, "ERROR! [fopen in fileOpen]: Couldn't open data file \"%s\".\nExiting...\n", file->header.name);
         exit(EXIT_FAILURE);
     }
 
+    Index.IndexSize = 0;
     char c;
-    int size, tmp = 0;
+    short size, curPos;                // j will be used to track elements in Index
     fBlock *fblck = file->head;
 
     while (fblck != NULL)
     {
-        if (fblck->data == NULL)
-        { // In case the current block is not already set-up, or else we use the current block
+        if(Index.IndexSize > INDEX_ELEMENT_MAX){
+            fprintf(stderr, "ERROR! [in fileOpen]: unexpcted Index.IndexSize > INDEX_ELEMENT_MAX before end of file.\nExiting...\n");
+            exit(EXIT_FAILURE);
+        }
+
+        if (fblck->data == NULL){   // In case the current block is not already set-up, or else we use the current block
             fblck->data = allocBlock();
             if (fblck->data == NULL)
             {
@@ -133,33 +165,47 @@ void fileOpen(file *file)
             }
             size++;
         } while (c != '\n');
+        
+        if(fseek(file->RFile, -1 * size, SEEK_CUR)){
+            fprintf(stderr, "ERROR! [fseek in fileOpen]: returned a non-zero value.\nExiting...\n");
+            exit(EXIT_FAILURE);
+        }
 
-        fseek(file->RFile, -1 * size, SEEK_CUR);
-
-        if (size > BUFFER_MAX_SIZE - fblck->data->header.usedSpace)
-        {
+        if (size > BUFFER_MAX_SIZE - fblck->data->header.usedSpace){
             fblck = fblck->next;
             continue; // Go to the next iteration
         }
+        
+        curPos = ftell(file->RFile);
+        if(curPos == -1){
+            fprintf(stderr, "ERROR! [ftell in fileOpen]: returned -1.\nExiting...\n");
+            exit(EXIT_FAILURE);
+        }
 
+        Index.tab[Index.IndexSize].filePos = curPos;    
+        Index.tab[Index.IndexSize].key = fblck->data->header.StartFreeSpaceAddress;
+        Index.tab[Index.IndexSize].endAddress = fblck->data->header.StartFreeSpaceAddress + size;
+        Index.tab[Index.IndexSize].isDeletedLogically = false;
+        Index.tab[Index.IndexSize].blockAddress = fblck;
+        Index.IndexSize++;
+        
         for (int i = 0; i < size; i++)
         {
             c = fgetc(file->RFile);
 
-            switch (c)
-            {
-            case ':':
-                fblck->data->header.StartFreeSpaceAddress[i] = '\0';
-                break;
+            switch (c){
+                case ':':
+                    fblck->data->header.StartFreeSpaceAddress[i] = '\0';
+                    break;
 
-            case '\n': // character end of struct, change it to '#' if you are still using it, chahinez.
-                fblck->data->header.StartFreeSpaceAddress[i] = '\0';
-                break;
+                case '\n': // character end of struct, change it to '#' if you are still using it, chahinez.
+                    fblck->data->header.StartFreeSpaceAddress[i] = '\0';
+                    break;
 
-            default:
-                fblck->data->header.StartFreeSpaceAddress[i] = c;
-                break;
-            }
+                default:
+                    fblck->data->header.StartFreeSpaceAddress[i] = c;
+                    break;
+                }
         }
 
         fblck->data->header.EndAddress += size;
@@ -167,8 +213,7 @@ void fileOpen(file *file)
         fblck->data->header.NbStructs++;
         fblck->data->header.usedSpace += size;
 
-        do
-        { // In case of some padding
+        do{ // In case of some padding
             c = fgetc(file->RFile);
         } while (c == '\0');
 
@@ -611,7 +656,7 @@ void UpdateFileStruct(file *file)
 }
 
 // Function to delete an element from the file (Logical)
-void DeleteElementLogique()
+void DeleteElementLogique(FILE* RFile)
 {
     short indexElement = searchElement();
     if (indexElement == -1)
@@ -622,6 +667,7 @@ void DeleteElementLogique()
     else
     {
         Index.tab[indexElement].isDeletedLogically = true;
+        RFile_Delete(RFile, indexElement);
     }
 }
 
@@ -650,7 +696,7 @@ void RFile_Delete(FILE *file, short elementIndexPos)
     // In case Not the last element in index, so there is shifting needed
 
     unsigned short pos = (Index.tab[elementIndexPos].filePos);
-    unsigned long taille = (Index.tab->endAddress - Index.tab->key);
+    unsigned long taille = (Index.tab[elementIndexPos].endAddress - Index.tab[elementIndexPos].key);
     char c;
     fseek(file, pos + taille, SEEK_SET);
     // Shift the remaining characters to the left
@@ -668,20 +714,19 @@ void RFile_Delete(FILE *file, short elementIndexPos)
             c = fgetc(file);
             buffer[i] = c;
             i++;
-        } while (c != "\n");
+        } while (c != '\n');
         
-        buffer[i] = "\0";
+        buffer[i] = '\0';
 
         fseek(file,pos, SEEK_SET);
-        fputS(buffer, file); //Shift the record to new pos
+        fputs(buffer, file); //Shift the record to new pos
         pos = pos + i;
         fseek(file, ftell(file) + taille, SEEK_SET);// Jump to next Record
     }
 }
 
 // Function to delete an element from the file (Physique)
-int DeleteElementPhysique(file *file,FILE *Rfile)
-{
+int DeleteElementPhysique(file *file,FILE *Rfile){
 
     // Search for the index of the element to be deleted
     short indexElementDeleted = searchElement();
@@ -785,7 +830,6 @@ void decimalPrint(char *src, int size)
 }
 
 // Prints a block, struct by struct
-
 void __printBlock(block *block)
 {
     int i = 0, nbStruct = 1;
@@ -803,7 +847,6 @@ void __printBlock(block *block)
 }
 
 // Prints the entire file, block by block
-
 void printFile(file file)
 {
     int nbFBlock = 1;
@@ -815,14 +858,30 @@ void printFile(file file)
         file.head = file.head->next;
     }
 }
+
+// Prints the index's elements in an organized manner
+void printIndex(){
+    printf("Printing index of size IndexSize = %hu:\n\n", Index.IndexSize);
+    for(int i = 0; i < Index.IndexSize; i++){
+        printf("Element %d:\n", i + 1);
+        printf("Block address: %p\n", Index.tab[i].blockAddress);
+        printf("Key (first element) address: %p\n", Index.tab[i].key);
+        printf("endAddress (last element): %p\n", Index.tab[i].endAddress);
+        printf("Position in RFile: %lu\n", Index.tab[i].filePos);
+        if(Index.tab[i].isDeletedLogically)
+            printf("IsDeletedLogically: True\n\n");
+        else
+            printf("IsDeletedLogically: False\n\n");
+    }
+}
 ///-----------------------------------------------------------------------------
 
 // Headers File
 
 void StockHeaderecFile(FILE *Recfile, file *file)
 {
-    char filename[36]; // Change the filename as needed
-    snprintf(filename, ".%s.header", (file->header).name);
+    char filename[70]; // Change the filename as needed
+    sprintf(filename, ".%s.header", (file->header).name);
 
     // Open file for writing, create if not exists
     Recfile = fopen(filename, "wb"); // 'w' searches file. if the file exists . its contents are overwritten . if the file doesn't existe . a new file is created.
@@ -843,37 +902,6 @@ void StockHeaderecFile(FILE *Recfile, file *file)
     {
         // Write the BlockHeader structure to the file
         fwrite(&((tmp->data)->header), sizeof(fileHeader), 1, Recfile);
-        (tmp) = (tmp)->next;
-    }
-
-    // Close the file
-    fclose(Recfile);
-}
-
-void ReStockHeaderecFile(FILE *Recfile, file *file)
-{
-    char filename[36];
-    snprintf(filename, ".%s.header", (file->header).name); // Change the filename as needed
-
-    // Open file for reading
-    Recfile = fopen(filename, "rb");
-
-    if (Recfile == NULL)
-    {
-        fprintf(stderr, "Error opening file %s\n", filename);
-        return;
-    }
-
-    // Read fileHeader from the file
-    fread(&(file->header), sizeof(fileHeader), 1, Recfile);
-
-    int i = 0;
-
-    fBlock *tmp = file->head;
-    while (tmp != NULL)
-    {
-        // Write the BlockHeader structure to the file
-        fread(&((tmp->data)->header), sizeof(fileHeader), 1, Recfile);
         (tmp) = (tmp)->next;
     }
 

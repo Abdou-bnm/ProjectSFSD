@@ -79,14 +79,19 @@ void ElementShift(char** NewElementPos,char* StartCurElementPos,char* EndCurElem
 int CalculateSpace(char *StartEspaceAddress, char *EndEspaceAddress);
 void UpdateIndexDelete(int IndexElementDeleted);
 void UpdateFileStruct(file* file);
-void DeleteElementLogique();
-int DeleteElementPhysique(file* file);
+void DeleteElementLogique(FILE* RFile);
+int DeleteElementPhysique(file *file,FILE *Rfile);
 void decimalPrint(char* src, int size);
 void __printBlock(block* block);
 void printFile(file file);
+void printIndex();
 void RFile_insert(FILE* file, char* element, unsigned long elementSize);
 void __setBlockAtStart(block* blck);
 void fileOpen(file* file);
+void StockHeaderecFile(FILE *Recfile, file *file);
+void loadHeader(file *file);
+void RFile_Delete(FILE *file, short elementIndexPos);
+void updateIndexFPos(FILE* file);
 /// -----------------------------------------------------------------------------------------------------------------------
 
 /// Part of Variable Declaration ------------------------------------------------------------------------------------------

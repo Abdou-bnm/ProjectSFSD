@@ -44,50 +44,50 @@ int main(int argc, char const *argv[]) {
                 printf("enter the key (%d characters MAX, NO spaces): ", KEY_MAX_SIZE - 1);
                 scanf("%16s", buffer);
                 getchar();
-                int i=0;
-                char TabKey[KEY_MAX_SIZE],TabRest[BUFFER_MAX_SIZE];
-                int N=strlen(buffer);
-                for(int i=0;i<N;i++){
-                    TabKey[i]=buffer[i];
-                }
-                TabKey[i]='\0'; // "\0"
-                buffer[i]='a';
-                int k=i;
-                int SizeTabKey=strlen(TabKey);
+            //     int i=0;
+            //     char TabKey[KEY_MAX_SIZE],TabRest[BUFFER_MAX_SIZE];
+            //     int N=strlen(buffer);
+            //     for(int i=0;i<N;i++){
+            //         TabKey[i]=buffer[i];
+            //     }
+            //     TabKey[i]='\0'; // "\0"
+            //     buffer[i]='a';
+            //     int k=i;
+            //     int SizeTabKey=strlen(TabKey);
 
-            //insertion of the rest of the struct
-                printf("enter the rest of the structs: ");
-                fgets(buffer+SizeTabKey+1,BUFFER_MAX_SIZE-SizeTabKey-3,stdin); 
-                buffer[i]='\0';
-                buffer[i+1]='\0';
-                int SizeBuffer=strlen(buffer);
-                buffer[k]='\0';
+            // //insertion of the rest of the struct
+            //     printf("enter the rest of the structs: ");
+            //     fgets(buffer+SizeTabKey+1,BUFFER_MAX_SIZE-SizeTabKey-3,stdin); 
+            //     buffer[i]='\0';
+            //     buffer[i+1]='\0';
+            //     int SizeBuffer=strlen(buffer);
+            //     buffer[k]='\0';
 
-                for(int i=SizeTabKey+1;i<SizeBuffer;i++){
-                    TabRest[i]=buffer[i];
-                }
+            //     for(int i=SizeTabKey+1;i<SizeBuffer;i++){
+            //         TabRest[i]=buffer[i];
+            //     }
 
-                int SizeTabRest = strlen(TabRest);
-                file.head=insertion(file.head,TabKey,SizeTabKey,SizeTabRest);
+            //     int SizeTabRest = strlen(TabRest);
+            //     file.head=insertion(file.head,TabKey,SizeTabKey,SizeTabRest);
 
                 
                 // From now on this bullshit I wrote, bidma chahinez tkamel l khadma, bach n tester la fonction ta3i, and it worked successfully.
                 // Bach temchi hadi, commentit m ligne 47 (int i=0;) 7ata 71 (file.head=insertion(file.head,TabKey,SizeTabKey,SizeTabRest);).
                 
-                // int keySize = strlen(buffer);
+                int keySize = strlen(buffer);
                 
-                // printf("enter the rest of the structs: ");
-                // fgets(buffer + keySize + 1, BUFFER_MAX_SIZE - keySize, stdin);
+                printf("enter the rest of the structs: ");
+                fgets(buffer + keySize + 1, BUFFER_MAX_SIZE - keySize, stdin);
                 
-                // int dataSize = strlen(buffer + keySize + 1);
-                // buffer[keySize + dataSize] = '\0';
-                // dataSize = strlen(buffer + keySize + 1);
+                int dataSize = strlen(buffer + keySize + 1);
+                buffer[keySize + dataSize] = '\0';
+                dataSize = strlen(buffer + keySize + 1);
 
-                // char *tmp = (char*)malloc(BUFFER_MAX_SIZE);
-                // memcpy(tmp, buffer, BUFFER_MAX_SIZE);
+                char *tmp = (char*)malloc(BUFFER_MAX_SIZE);
+                memcpy(tmp, buffer, BUFFER_MAX_SIZE);
 
-                // RFile_insert(file.RFile, tmp, keySize + 1 + dataSize + 1);
-                // free(tmp);
+                RFile_insert(file.RFile, tmp, keySize + 1 + dataSize + 1);
+                free(tmp);
                 
                 break;
             
@@ -107,11 +107,11 @@ int main(int argc, char const *argv[]) {
                 
                 switch(answer){
                     case 1:
-                        DeleteElementPhysique(&file);
+                        DeleteElementPhysique(&file, file.RFile);
                         break;
 
                     case 2:
-                        DeleteElementLogique(&file);
+                        DeleteElementLogique(file.RFile);
                         break;
 
                     default:
@@ -149,5 +149,10 @@ int main(int argc, char const *argv[]) {
     }
 
     end:
+        StockHeaderecFile(file.RFile, &file);
+        if(fclose(file.RFile)){
+            fprintf(stderr, "ERROR! [fclose in main]: returned a non-zero value.\nExiting...\n");
+            exit(EXIT_FAILURE);
+        }
         return 0;
 }
