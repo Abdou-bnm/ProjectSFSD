@@ -86,26 +86,18 @@ void loadHeader(file *file)
     free(fileName);
     fread(&(file->header), sizeof(fileHeader), 1, file->HFile);
 
-    file->head = (fBlock *)malloc(sizeof(fBlock));
-    if (file->head == NULL)
-    {
-        fprintf(stderr, "ERROR! [malloc 2 in loadHeader]: Couldn't allocate memory for file->head.\nExiting...\n");
-        exit(EXIT_FAILURE);
-    }
-    file->head->data = NULL;
-    file->head->next = NULL;
     fBlock *fblck = file->head;
-    for (unsigned int i = 0; i < file->header.nbBlocks - 1; i++)
-    { // - 1 because the initial fBlock was made outside of the loop
-        fblck = fblck->next;
-        fblck = (fBlock *)malloc(sizeof(fBlock));
-        if (file->head == NULL)
-        {
-            fprintf(stderr, "ERROR! [malloc 3 in loadHeader]: Couldn't allocate memory for fblck.\nExiting...\n");
+    for(int i = 0; i < file->header.nbBlocks; i++){
+        fblck = (fBlock*)malloc(sizeof(fBlock));
+        if(fblck == NULL){
+            fprintf(stderr, "ERROR! [malloc 2 in loadHeader]: Couldn't allocate memory for fblck.\nExiting...\n");
             exit(EXIT_FAILURE);
         }
+
         fblck->data = NULL;
         fblck->next = NULL;
+
+        fblck = fblck->next;
     }
 
     if (fclose(file->HFile))
@@ -182,6 +174,7 @@ void fileOpen(file *file)
             exit(EXIT_FAILURE);
         }
 
+        // Updating the element in the Index
         Index.tab[Index.IndexSize].filePos = curPos;    
         Index.tab[Index.IndexSize].key = fblck->data->header.StartFreeSpaceAddress;
         Index.tab[Index.IndexSize].endAddress = fblck->data->header.StartFreeSpaceAddress + size;
@@ -189,6 +182,7 @@ void fileOpen(file *file)
         Index.tab[Index.IndexSize].blockAddress = fblck;
         Index.IndexSize++;
         
+        // Reading the actual element into its respective block
         for (int i = 0; i < size; i++)
         {
             c = fgetc(file->RFile);
@@ -208,10 +202,13 @@ void fileOpen(file *file)
                 }
         }
 
+        // Updating the block's header info
         fblck->data->header.EndAddress += size;
         fblck->data->header.StartFreeSpaceAddress += size;
         fblck->data->header.NbStructs++;
         fblck->data->header.usedSpace += size;
+
+        file->header.NbStructs++;
 
         do{ // In case of some padding
             c = fgetc(file->RFile);
@@ -893,17 +890,7 @@ void StockHeaderecFile(FILE *Recfile, file *file)
     }
 
     // Write fileHeader to the file
-
     fwrite(&(file->header), sizeof(fileHeader), 1, Recfile);
-
-    // Write the BlockHeaders
-    fBlock *tmp = file->head;
-    while (tmp != NULL)
-    {
-        // Write the BlockHeader structure to the file
-        fwrite(&((tmp->data)->header), sizeof(fileHeader), 1, Recfile);
-        (tmp) = (tmp)->next;
-    }
 
     // Close the file
     fclose(Recfile);
