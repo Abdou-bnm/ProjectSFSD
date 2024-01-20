@@ -21,6 +21,8 @@ int main(int argc, char const *argv[]) {
             printf("Opening file \"%s\"... ", file.header.name);
             fileOpen(&file);
             printf("file opened successfully!\n");
+            break;
+
         default:
             printf("Invalide choice.");
             goto end;
@@ -69,7 +71,6 @@ int main(int argc, char const *argv[]) {
 
                 int SizeTabRest = strlen(TabRest);
                 file.head=insertion(file.head,TabKey,SizeTabKey,SizeTabRest);
-
                 
                 // From now on this bullshit I wrote, bidma chahinez tkamel l khadma, bach n tester la fonction ta3i, and it worked successfully.
                 // Bach temchi hadi, commentit m ligne 47 (int i=0;) 7ata 71 (file.head=insertion(file.head,TabKey,SizeTabKey,SizeTabRest);).
@@ -89,7 +90,7 @@ int main(int argc, char const *argv[]) {
                 // RFile_insert(file.RFile, tmp, keySize + 1 + dataSize + 1);
                 // free(tmp);
                 
-                break;
+                // break;
             
             case 2:
                 // Delete function
@@ -107,11 +108,11 @@ int main(int argc, char const *argv[]) {
                 
                 switch(answer){
                     case 1:
-                        DeleteElementPhysique(&file);
+                        DeleteElementPhysique(&file, file.RFile);
                         break;
 
                     case 2:
-                        DeleteElementLogique(&file);
+                        DeleteElementLogique(file.RFile);
                         break;
 
                     default:
@@ -149,5 +150,10 @@ int main(int argc, char const *argv[]) {
     }
 
     end:
+        StockHeaderecFile(file.RFile, &file);
+        if(fclose(file.RFile)){
+            fprintf(stderr, "ERROR! [fclose in main]: returned a non-zero value.\nExiting...\n");
+            exit(EXIT_FAILURE);
+        }
         return 0;
 }
