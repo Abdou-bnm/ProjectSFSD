@@ -75,7 +75,7 @@ char *KeyPrime=Key;
 // printf("\nkey:%p",Key);
 
 // printf("\nkeyprime:%p\n",KeyPrime);
-while(*KeyPrime!=0){
+while(*KeyPrime!='\0'){
     KeyPrime++;
 //printf("whilekey");
 }
@@ -89,53 +89,3 @@ block MS[16];                               // The Memory which will contain all
 IndexType Index;                            // An index associated to the file containing useful information for various operations.
 block MS[16];                               // The Memory which will contain all the blocks of the linked list and other blocks used by default.
 IndexType Index;
-
-
-/*typedef FileAttente {
-    char elements[2*BUFFER_MAX_SIZE];
-    int Startfile , Endfile;
-}FileAttente;
-
-void initialiserFile(struct FileAttente *file) {
-    file->Startfile = -1;
-    file->Endfile = -1;
-}
-
-void enfiler(struct FileAttente *file, int element) {
-    //if (file->fin == MAX_TAILLE - 1) {
-       // printf("La file d'attente est pleine. Impossible d'enfiler.\n");
-    //} 
-    else {
-        if (file->debut == -1) {
-            file->debut = 0;
-        }
-        file->fin++;
-        file->elements[file->fin] = element;
-    }
-}
-
-char defiler(struct FileAttente *file) {
-    char element;
-   // if (estVide(file)) {
-     //   printf("La file d'attente est vide. Impossible de défiler.\n");
-       // return -1;  // Valeur d'erreur, vous pouvez ajuster selon vos besoins.
-    //} 
-    else {
-        element = file->elements[file->debut];
-        if (file->debut == file->fin) {
-            // Il n'y a qu'un seul élément dans la file.
-            initialiserFile(file);
-        } else {
-            file->debut++;
-        }
-        return element;
-    }
-}*/
-
-
-
-
-
-
-
-
