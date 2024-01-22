@@ -54,10 +54,10 @@ int main(int argc, char const *argv[]) {
                 element_Size = keySize + strlen(buffer + keySize);
                 buffer[element_Size - 1] = '\0';
 
-                system("clear");
+                //system("clear");
                 insert(&file, element_Size);
                 
-            
+             break;;
             case 2:
                 // Delete function
                 printf("Enter the key to Delete Element (Keys does NOT contain spaces) and a maximum size of %d: ", KEY_MAX_SIZE - 1);
