@@ -4,7 +4,7 @@
 
 // Global variables
 char buffer[BUFFER_MAX_SIZE]; // A buffer to transfer data between RAM and Memory (used for file manipulation operations).
-block MS[Memory_Bloc_Max];    // The Memory which will contain all the blocks of the linked list and other blocks used by default.
+block MS[MEMORY_BLOCK_MAX];    // The Memory which will contain all the blocks of the linked list and other blocks used by default.
 IndexType Index;              // An index associated to the file containing useful information for various operations.
 /// -----------------------------------------------------------------------------------------------------------------------
 
@@ -375,242 +375,279 @@ void RFile_insert(FILE *file, char *element, unsigned long elementSize)
 
     free(tmp); // Free the tmp buffer
 }
+// PROBLEM HERE *************************************************
+int insert_inIndex(file* file, unsigned short elementSize){
+    unsigned short i = 0;
+    int cmpResult, j = Index.IndexSize;
 
-fBlock *insertion(fBlock *head, char TabKey[KEY_MAX_SIZE], int SizeTabKey, int SizeTabRest)
-{
-
-    char TabKeyIndex[KEY_MAX_SIZE];
-    fBlock *PtrF = head;
-
-    // while (PtrF->data!=NULL || PtrF->next!=NULL){PtrF=PtrF->next;}//initialiser un ptr sur le block courrent
-
-    // COMMENCER L'INSERTION
-    if (Index.IndexSize == 0)
-    {
-
-        // mettre le header a jour
-        if (PtrF->data == NULL)
-        {
-            head->data = allocBlock();
-            head->next = NULL;
-            PtrF = head;
-        }
-        PtrF->data->header.NbStructs = 1;
-        PtrF->data->header.usedSpace = SizeTabRest + SizeTabKey + 3;
-
-        // mettre lbuffer dans le tableau du block
-        for (int i = 0; i < SizeTabRest + SizeTabKey + 3; i++)
-            PtrF->data->tab[i] = buffer[i];
-
-        // the block is used, deja fait en haut mais bon
-        PtrF->data->isUsed = 1;
-
-        // inserer dans l'indexe
-        Index.IndexSize = 1;
-        Index.tab[0].key = &(PtrF->data->tab[0]);
-        Index.tab[0].blockAddress = PtrF;
-        Index.tab[0].endAddress = &(PtrF->data->tab[SizeTabKey - 1]);
-        Index.tab[0].isDeletedLogically = 0;
+    if(j == INDEX_ELEMENT_MAX){
+        fprintf(stderr, "ERROR! [insert_inIndex]: Index full, cannot insert another element, Returning...\n");
+        return -1;
     }
-    else
-    {
-        int j = 0, i = 0;
-        char *PtrStart = Index.tab[0].key, *PtrEnd = Index.tab[0].endAddress;
 
-        // recuperer la chaine de car(cle) se trouvant dans l'indexe et la comparer avec celle entrée par l utilisateur
-        while (PtrStart != PtrEnd)
-        {
-            TabKeyIndex[i] = *PtrStart;
-            i++;
-            PtrStart++;
+    for(i; i < Index.IndexSize; i++){
+        cmpResult = strncmp(buffer, Index.tab[i].key, KEY_MAX_SIZE);
+        if(!cmpResult){
+            fprintf(stderr, "ERROR! [strncmp in insert_inIndex]: returned -1; key already exists in index.\nReturning...\n");
+            return -1;
         }
-
-        printf("test 1 done");
-        // chercher la premiere cle se trouvant dans l'indexe > a la cle entree par l'utilisateur
-        while (j < Index.IndexSize && strncmp(TabKeyIndex, TabKey, 16) < 0)
-        {
-            j++;
-            PtrStart = Index.tab[j].key;
-            PtrEnd = Index.tab[j].endAddress;
-            i = 0;
-            while (PtrStart != PtrEnd)
-            {
-                TabKeyIndex[i] = *PtrStart;
-                i++;
-                PtrStart++;
-            }
-        }
-        printf("test 2 done");
-        if (j >= Index.IndexSize)
-        {
-            PtrF = Index.tab[j - 1].blockAddress;
-            printf("test 3 done");
-            if (BUFFER_MAX_SIZE - PtrF->data->header.usedSpace >= SizeTabKey + SizeTabRest + 3)
-            {
-                // inserer dans l'indexe
-                Index.tab[j].key = (Index.tab[j - 1].endAddress + SizeTabRest + 4); // supposant que EndAderess se trouve au niveau du dernier caractere de la cle(+3 pour les 3 "\0" +1 pour se positionner sur la nouvelle case)
-                Index.tab[j].endAddress = (Index.tab[j].key + SizeTabKey);
-                Index.tab[j].blockAddress = PtrF;
-                Index.tab[j].isDeletedLogically = 0;
-
-                // inserer dans le bloc
-                // placer la chaine dans le bloc(elle se trouve a la fin de l'indexe donc c'est le dernier enregistrement du bloc courrant)
-                PtrStart = Index.tab[j].key;
-                PtrEnd = Index.tab[j].endAddress + SizeTabRest + 3;
-                i = 0;
-                while (PtrStart != PtrEnd)
-                {
-                    *PtrStart = buffer[i];
-                    i++;
-                    PtrStart++;
-                }
-                printf("test 4 done");
-            }
-            else
-            {
-                // allouer un nv bloc
-                PtrF->next->data = allocBlock();
-                PtrF->next->next = NULL;
-                PtrF = PtrF->next; // deplacer le ptr
-
-                // inserer dans l'indexe
-                Index.tab[j].key = &(PtrF->data->tab[0]);
-                Index.tab[j].endAddress = (Index.tab[j].key + SizeTabKey);
-                Index.tab[j].blockAddress = PtrF;
-                Index.tab[j].isDeletedLogically = 0;
-
-                // inserer dans le bloc
-                // placer la chaine entree par l'utilisateur au niveau du debur du nouveau bloc
-                // a revoir
-                PtrStart = Index.tab[j].key;
-                PtrEnd = Index.tab[j].endAddress + SizeTabRest + 3;
-                i = 0;
-                while (PtrStart != PtrEnd)
-                {
-                    *PtrStart = buffer[i];
-                    i++;
-                    PtrStart++;
-                }
-                printf("test 5 done");
-            }
-        }
-        else
-        {
-            printf("test 6 done");
-            // pour l'insertion dans l'indexe :
-            char *PtrKey = Index.tab[j].key;
-            fBlock *PtrBlockKey = Index.tab[j].blockAddress;
-
-            // file pour stocker les donnees
-            char file[2 * BUFFER_MAX_SIZE];
-            int Endfile = 0; // fin de file et aussi taille de file
-
-            int N = (SizeTabKey + SizeTabRest + 3) - (BUFFER_MAX_SIZE - Index.tab[j].blockAddress->data->header.usedSpace);
-            fBlock *P = Index.tab[j].blockAddress;                                         // pointeur sur le block du premier element > a la cle
-            char *Qtab = &(P->data->tab[BUFFER_MAX_SIZE - P->data->header.usedSpace - 1]); // pointeur sur le dernier element du block du premier element > a la cle
-            // enfiler l'enregistrement
-            for (int i = 0; i < SizeTabKey + SizeTabRest + 3; i++)
-            {
-                enfiler(file, buffer[i], &Endfile);
-            }
-            printf("test 7 done");
-            while (Endfile != 0)
-            {
-                int Sizefile = Endfile; // stocker la taille de la pile
-                int cpt = 0;
-                if (N > 0)
-                {
-                    while (cpt < N || *Qtab != '#')
-                    {
-                        enfiler(file, *Qtab, &Endfile);
-                        cpt++;
-                        Qtab--;
-                    }
-                }
-                printf("test 8 done");
-                if (P == Index.tab[j].blockAddress)
-                {
-                    char *QtabPrime = Qtab, *Ptab = Index.tab->key; // pointeur sur element de fin du block + pointeur sur ou on va inserer la cle
-                    int nb = Qtab - Ptab;                           // nb d'occurrences;
-                    for (int i = 0; i < SizeTabKey + SizeTabRest + 3; i++)
-                    {
-                        Qtab = QtabPrime + i;
-                        for (int k = 0; k < nb - 1; k++)
-                        {
-                            *(Qtab + 1) = *Qtab;
-                            Qtab--;
-                        }
-                    }
-                    P->data->header.usedSpace = P->data->header.usedSpace - N + SizeTabKey + SizeTabRest + 3; // update de l'espace du block
-                    // insertion de la donnee
-                    for (int i = 0; i < SizeTabKey + SizeTabRest + 3; i++)
-                    {
-                        *Ptab = defiler(file, &Endfile);
-                        Ptab++;
-                    }
-                    printf("test 9 done");
-                }
-                else if (P->next != NULL)
-                {
-                    char *Ptab = &(P->data->tab[P->data->header.usedSpace - 1]); // pointeur sur le dernier element du block
-                    char *PtabPrime = Ptab, *Rtab = NULL;                        // Rtab nous aidera pour l'insertion c'est tout
-                    int nb = P->data->header.usedSpace;                          // nb d'occurrences
-                    // decalage
-                    for (int i = 0; i < Sizefile; i++)
-                    {
-                        Ptab = PtabPrime + i;
-                        for (int k = 0; k < nb - 1; k++)
-                        {
-                            *(Ptab + 1) = *Ptab;
-                            Ptab--;
-                        }
-                    }
-
-                    P->data->header.usedSpace = P->data->header.usedSpace - N + Sizefile; // update de l'espace du block
-                    Rtab = &(P->data->tab[0]);                                            // placer Rtab sur le premier element du block
-                    // commencer a mettre les elements de la file au tout debut du block
-                    for (int i = 0; i < Sizefile; i++)
-                    {
-                        *Rtab = defiler(file, &Endfile);
-                        Rtab++;
-                    }
-                }
-                else
-                {
-                    printf("test 10 done");
-                    P->next->data = allocBlock();
-                    P->next->next = NULL;
-                    P = P->next;
-                    // defiler directement les elements de la pile dans le block
-                    char *Rtab = &(P->data->tab[0]);
-                    for (int i = 0; i < Sizefile; i++)
-                    {
-                        *Rtab = defiler(file, &Endfile);
-                        Rtab++;
-                    }
-                }
-                P = P->next;
-                Qtab = &(P->data->tab[BUFFER_MAX_SIZE - P->data->header.usedSpace - 1]);
-                N = (Sizefile) - (BUFFER_MAX_SIZE - P->data->header.usedSpace);
-            }
-            // traitement de l'indexe
-            //  decaler les elements de l'indexe
-            int i = Index.IndexSize;
-            while (i >= j)
-            { // pour l'egalite pas sure (a revoir)
-                Index.tab[i] = Index.tab[i - 1];
-                i--;
-            }
-            Index.tab[j].key = PtrKey;
-            Index.tab[j].endAddress = PtrKey + SizeTabKey;
-            Index.tab[j].blockAddress = PtrBlockKey;
-            Index.tab[j].isDeletedLogically = 0;
-            printf("test 11 done");
-        }
+        if(cmpResult < 0)
+            break;
     }
-    printf("\nElement Added Successfully!\n");
-    return (head);
+
+    for(j; j > i; j--)
+        Index.tab[j] = Index.tab[j - 1];
+
+
+    memset(&Index.tab[i], 0, sizeof(indexElement));
+    Index.tab[i].isDeletedLogically = false;
+
+    // In case we need to insert into the start of the file, so no Index.tab[i - 1] to use
+    if(i == 0){
+        Index.tab[i].blockAddress = file->head;
+        Index.tab[i].key = file->head->data->tab;
+        goto endFunc;
+    }
+    
+    // In case there is enough space in the current fBlock (the previous element's fBlock)
+    unsigned short freeSpace = BUFFER_MAX_SIZE - Index.tab[i - 1].blockAddress->data->header.usedSpace;
+    if(freeSpace >= elementSize || Index.tab[i - 1].blockAddress == Index.tab[i + 1].blockAddress){
+        Index.tab[i].blockAddress = Index.tab[i - 1].blockAddress;
+        Index.tab[i].key = Index.tab[i - 1].endAddress + 1;
+        goto endFunc;
+    }
+
+    // WILL TRY TO IMPLEMENT IT IN THE PREVIOUS CASE, BECAUSE THEY SHARE EXACTLY THE SAME CODE
+    // // In case we are inserting into the middle of an already full block (in the previous case, we had enough space. Now we don't)
+    // if(Index.tab[i - 1].blockAddress == Index.tab[i + 1].blockAddress){
+    //     Index.tab[i].blockAddress = Index.tab[i - 1].blockAddress;
+    //     Index.tab[i].key = Index.tab[i - 1].endAddress + 1;
+    // }
+
+    // In case we need to put it at the start of the next fBlock and it is already set up (exists already)
+    if(Index.tab[i + 1].blockAddress != NULL){
+        Index.tab[i].blockAddress = Index.tab[i + 1].blockAddress;
+        Index.tab[i].key = Index.tab[i + 1].blockAddress->data->tab;
+        goto endFunc;
+    }
+    
+    // The final is we need to put the new element at the start of the next fBlock  and it is not set up at all (Index.tab[i + 1].blockAddress == NULL)
+    Index.tab[i].blockAddress = (fBlock*)malloc(sizeof(fBlock));
+    if(Index.tab[i].blockAddress == NULL){
+        fprintf(stderr, "ERROR! [malloc in recuInsert]: Couldn't allocate space for next element's fBlock.\nExiting...\n");
+        exit(EXIT_FAILURE);
+    }
+    
+    Index.tab[i].blockAddress->data = allocBlock();
+    if(Index.tab[i].blockAddress->data == NULL){
+        fprintf(stderr, "ERROR! [allocBlock in recuInsert]: Couldn't find a block in MS.\nReturning...\n");
+        return -1;
+    }
+    
+    // Set the new element's starting adresse to the first adresse of the new fBlock
+    Index.tab[i].key = Index.tab[i].blockAddress->data->tab;                
+    Index.tab[i - 1].blockAddress->next = Index.tab[i].blockAddress;        // Links the new fBlock to the previous fBlock
+    __setBlockAtStart(Index.tab[i].blockAddress->data);
+    file->header.nbBlocks++;
+
+    endFunc:
+        file->header.NbStructs++;
+        Index.IndexSize++;
+        return i;
 }
+
+// this is the old one
+void update_fBlockInIndex(fBlock *fblck){
+    unsigned int i = 0, j = 0;
+    while(i < Index.IndexSize && Index.tab[i].blockAddress != fblck)
+        i++;
+
+    // if any error handling in this function ever happened, then we are in big trouble
+    if(i == Index.IndexSize){
+        fprintf(stderr, "ERROR! [updateInIndex]: Couldn't find any element with fBlock adresse for some reason.\nExiting...\n");
+        exit(EXIT_FAILURE);
+    }
+
+    while(Index.tab[i].blockAddress == fblck){
+        Index.tab[i].key = &fblck->data->tab[j];
+
+        // increment until end of key
+        while(j < BUFFER_MAX_SIZE && fblck->data->tab[j] != '\0')
+            j++;
+
+        if(j == BUFFER_MAX_SIZE){
+            fprintf(stderr, "ERROR! [updateInIndex]: reached end-of-block before expected end of key.\nExiting...\n");
+            exit(EXIT_FAILURE);
+        }
+
+        j++;
+        // this time until end of struct
+        while(j < BUFFER_MAX_SIZE && fblck->data->tab[j] != '\0')
+            j++;
+
+        if(j == BUFFER_MAX_SIZE){
+            fprintf(stderr, "ERROR! [updateInIndex]: reached end-of-block before expected end of element.\nExiting...\n");
+            exit(EXIT_FAILURE);
+        }
+        Index.tab[i].endAddress = &fblck->data->tab[j];
+
+        j++;
+        i++;
+    }
+}
+
+void update_fBlockHeader(fBlock* fblck){
+    unsigned int i = 0, j;
+    while(i < Index.IndexSize && Index.tab[i].blockAddress != fblck)
+        i++;
+
+    fblck->data->header.NbStructs = 0;
+    // if any error handling in this function ever happened, then we are in big trouble
+    if(i == Index.IndexSize){
+        fprintf(stderr, "ERROR! [update_fBlockHeader]: Couldn't find any element with fBlock adresse for some reason.\nExiting...\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // Advancing into the last element belonging to this fBlock in the index
+    while(Index.tab[i].blockAddress == fblck){
+        fblck->data->header.NbStructs++;
+        i++;
+    }
+
+    i--;
+
+    j = (unsigned long) Index.tab[i].endAddress - (unsigned long) &fblck->data->tab[0];
+
+    if(j >= BUFFER_MAX_SIZE || j <= 0){
+        fprintf(stderr, "ERROR! [update_fBlockHeader]: last character of last element in index in this fBlock - adresse of tab[0]  \
+        >= BUFFER_MAX_SIZE OR negative-or-null, WTF!\nExiting...\n");
+        exit(EXIT_FAILURE);
+    }
+
+    fblck->data->header.EndAddress = &fblck->data->tab[BUFFER_MAX_SIZE - 1];
+    fblck->data->header.StartAddress = &fblck->data->tab[0];
+    fblck->data->header.StartFreeSpaceAddress = Index.tab[i].endAddress + 1;
+    fblck->data->header.usedSpace = j + 1;
+}
+
+void RecuInsert(file* file, fBlock* fblck, char* element, unsigned short elementSize, unsigned short shiftStart){
+    if(BUFFER_MAX_SIZE - fblck->data->header.usedSpace >= elementSize){
+        for(int i = fblck->data->header.usedSpace; i >= shiftStart; i--)
+            fblck->data->tab[i + elementSize] = fblck->data->tab[i];
+
+        memcpy(&fblck->data->tab[shiftStart], element, elementSize);
+
+        goto endOfFunction;
+    }
+
+    // In case the next fBlock isn't already prepared
+    if(fblck->next == NULL){
+        fblck->next = (fBlock*)malloc(sizeof(fBlock));
+        if(fblck->next == NULL){
+            fprintf(stderr, "ERROR! [malloc in recuInsert]: Couldn't allocate space for fblck->next.\nExiting...\n");
+            exit(EXIT_FAILURE);
+        }
+
+        fblck->next->data = allocBlock();
+        if(fblck->next->data == NULL){
+            fprintf(stderr, "ERROR! [allocBlock in recuInsert]: Couldn't find a block in MS.\nReturning...\n");
+            goto endOfFunction;
+        }
+
+        file->header.nbBlocks++;
+        __setBlockAtStart(fblck->next->data);
+    }
+
+    // go to the 1st element belonging to this fBlock in index
+    unsigned short j;
+    for(j = 0; j < Index.IndexSize; j++)
+        if(Index.tab[j].blockAddress == fblck)
+            break;
+
+    // continue to the last element in index belonging to this fBlock
+    while (Index.tab[j].blockAddress == fblck)
+        j++;
+
+    j--;
+
+    unsigned short lastElement = j;
+    Index.tab[lastElement].blockAddress = fblck->next;
+
+
+    while(elementSize > (&fblck->data->tab[BUFFER_MAX_SIZE - 1] - Index.tab[j].key)){
+        Index.tab[j].blockAddress = fblck->next;
+        j--;
+    }
+
+    //calculated it using paper
+    unsigned long nextElementSize = (unsigned long) Index.tab[lastElement].endAddress - (unsigned long) Index.tab[j].key + 1;
+
+    char* nextElement = (char*)malloc(nextElementSize);
+    int i;
+
+    memcpy(nextElement, Index.tab[j].key , nextElementSize);
+
+    // there is no shifting to be done, the new element will occupy the entire block
+    if(Index.tab[j].key == fblck->data->tab)
+        goto nextFunctionCall;
+
+    else
+        // the "Index.tab[j - 1].endAddress" can be replaced by "Index.tab[j].key - 1" if something is wrong in Index
+        i = Index.tab[j - 1].endAddress - fblck->data->tab;
+
+    for(i; i >= shiftStart; i--)            // Start shifting from that character into the element of shiftStart
+        fblck->data->tab[i + elementSize] = fblck->data->tab[i];
+
+    // copy the new element into tab starting from shiftStart
+    memcpy(&fblck->data->tab[shiftStart], element, elementSize);
+
+    update_fBlockInIndex(fblck);
+
+    nextFunctionCall:
+        RecuInsert(file, fblck->next, nextElement, nextElementSize, 0);
+
+    endOfFunction:
+        free(element);
+        update_fBlockInIndex(fblck);
+        update_fBlockHeader(fblck);
+        return;
+}
+
+void insert(file* file, unsigned short element_Size){
+    int elementNumber = insert_inIndex(file, element_Size);
+    if(elementNumber == -1)
+        return;
+
+    // Creating 2 temporary strings, 1 RecuInsert (it will be freed) and the 2nd for RFile_insert (buffer will be set to 0)
+    char* tmpElement1 = (char*)malloc(element_Size + 1);
+    if(tmpElement1 == NULL){
+        fprintf(stderr, "ERROR! [malloc 1 in insert]: Couldn't allocate space for tmpElement1.\nExiting...\n");
+        exit(EXIT_FAILURE);
+    }
+    memset(tmpElement1, 0, element_Size + 1);
+    memcpy(tmpElement1, buffer, element_Size);
+
+    char* tmpElement2 = (char*)malloc(element_Size + 1);
+    if(tmpElement2 == NULL){
+        fprintf(stderr, "ERROR! [malloc 2 in insert]: Couldn't allocate space for tmpElement2.\nExiting...\n");
+        exit(EXIT_FAILURE);
+    }
+    memset(tmpElement2, 0, element_Size + 1);
+    memcpy(tmpElement2, buffer, element_Size);
+
+    fBlock* element_fBlck = Index.tab[elementNumber].blockAddress;
+
+    unsigned long element_IndiceInBlock;
+
+    element_IndiceInBlock = (unsigned long) Index.tab[elementNumber].key - (unsigned long) element_fBlck->data->tab;
+
+    RecuInsert(file, element_fBlck, tmpElement1, element_Size, element_IndiceInBlock);
+
+    RFile_insert(file->RFile, tmpElement2, element_Size);
+
+    printf("insert function completed executing successfully.\n");
+}
+
 //--------------------------------------------------------------------------------------------
 // Suppression Section
 void ElementShift(char **NewElementPos, char *StartCurElementPos, char *EndCurElementPos)
