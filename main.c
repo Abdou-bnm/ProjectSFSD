@@ -41,36 +41,21 @@ int main(int argc, char const *argv[]) {
         scanf("%hu", &answer);
         switch(answer){
             case 1:
-                // Insert function
-                //entrer la cle 
-                printf("enter the key (%d characters MAX, NO spaces): ", KEY_MAX_SIZE - 1);
+               // Insert function
+
+                printf("Enter the key to the element (%hu max characters, NO SPACES and CASE SENSITIVE): ", KEY_MAX_SIZE - 1);
                 scanf("%16s", buffer);
                 getchar();
-                int i=0;
-                char TabKey[KEY_MAX_SIZE],TabRest[BUFFER_MAX_SIZE];
-                int N=strlen(buffer);
-                for(int i=0;i<N;i++){
-                    TabKey[i]=buffer[i];
-                }
-                TabKey[i]='\0'; // "\0"
-                buffer[i]='a';
-                int k=i;
-                int SizeTabKey=strlen(TabKey);
+                unsigned short keySize = strlen(buffer) + 1, element_Size;
 
-            //insertion of the rest of the struct
-                printf("enter the rest of the structs: ");
-                fgets(buffer+SizeTabKey+1,BUFFER_MAX_SIZE-SizeTabKey-3,stdin); 
-                buffer[i]='\0';
-                buffer[i+1]='\0';
-                int SizeBuffer=strlen(buffer);
-                buffer[k]='\0';
+                printf("enter the rest of the structs (max size of %hu due to lack of overlap, spaces allowed): ", BUFFER_MAX_SIZE - keySize);
+                fgets(buffer + keySize, BUFFER_MAX_SIZE - keySize, stdin);
 
-                for(int i=SizeTabKey+1;i<SizeBuffer;i++){
-                    TabRest[i]=buffer[i];
-                }
+                element_Size = keySize + strlen(buffer + keySize);
+                buffer[element_Size - 1] = '\0';
 
-                int SizeTabRest = strlen(TabRest);
-                file.head=insertion(file.head,TabKey,SizeTabKey,SizeTabRest);
+                system("clear");
+                insert(&file, element_Size);
                 
             
             case 2:
