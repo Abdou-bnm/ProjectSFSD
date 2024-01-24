@@ -16,7 +16,6 @@
 
 // The declaration of the header of a file.
 typedef struct fileHeader{
-
     unsigned short nbBlocks;                // Number of blocks used by file
     unsigned short NbStructs;               // Number of structs in file
     char name[FILE_NAME_MAX_SIZE];          // Name of file, no path included
@@ -69,6 +68,7 @@ typedef struct IndexType{
 ///------------------------------------------------------------------------------------------------------------------------
 
 /// Part of function Declaration ------------------------------------------------------------------------------------------
+
 block* allocBlock();
 void createfile(file* file);
 short __recuSearch(unsigned short startIndex, unsigned short endIndex, char* key);

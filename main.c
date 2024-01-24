@@ -16,16 +16,16 @@ int main(int argc, char const *argv[]) {
             break;
         
         case 2:
-            printf("Enter the name of the file, (CASE SENSITIVE, NO spaces, 35 characters MAX): ");
+            printf("Enter the name of the file, (CASE SENSITIVE, NO spaces, %d characters MAX): ", FILE_NAME_MAX_SIZE - 1);
             scanf("%36s", file.header.name);
             printf("Opening file \"%s\"... ", file.header.name);
             fileOpen(&file);
-            printf("file opened successfully!\n");
+            printf("file opened successfully!\n\n");
             break;
 
         default:
-            printf("Invalide choice.");
-            goto end;
+            printf("Invalide choice.\nExiting...\n");
+            exit(EXIT_FAILURE);
     }
 
     while(true){
@@ -36,12 +36,15 @@ int main(int argc, char const *argv[]) {
         printf("2- Delete an element\n");
         printf("3- Search for an element\n");
         printf("4- Display contents of file\n");
-        printf("5- Leave\n");
+        printf("5- Display contents of Index\n");
+        printf("6- Leave\n");
         printf("Your Answer? : ");
         scanf("%hu", &answer);
+
         switch(answer){
             case 1:
-               // Insert function
+                // Insert function
+
                 printf("Enter the key to the element (%hu max characters, NO SPACES and CASE SENSITIVE): ", KEY_MAX_SIZE - 1);
                 scanf("%16s", buffer);
                 getchar();
@@ -53,11 +56,11 @@ int main(int argc, char const *argv[]) {
                 element_Size = keySize + strlen(buffer + keySize);
                 buffer[element_Size - 1] = '\0';
 
-                //system("clear");
+    
                 insert(&file, element_Size);
-                
-             break;
-           
+
+                break;
+            
             case 2:
                 // Delete function
                 printf("Enter the key to Delete Element (Keys does NOT contain spaces) and a maximum size of %d: ", KEY_MAX_SIZE - 1);
@@ -71,7 +74,7 @@ int main(int argc, char const *argv[]) {
                 scanf("%hu", &answer);
                 printf("Deleting Element...");
                 printf("\n-------------------------------------------\n");
-                
+
                 switch(answer){
                     case 1:
                         DeleteElementPhysique(&file, file.RFile);
@@ -85,6 +88,8 @@ int main(int argc, char const *argv[]) {
                         printf("Invalide choice.\nExiting...\n");
                         break;
                 }
+
+    
                 break;
                 
             case 3:
@@ -93,9 +98,9 @@ int main(int argc, char const *argv[]) {
                 printf("Enter the key to search (Keys does NOT contain spaces) and a maximum size of %d: ", KEY_MAX_SIZE - 1);
                 scanf("%16s", buffer);
                 if(searchElement() != -1)
-                    printf("Element exists.\n");
+                    printf("Element exists.\n\n");
                 else
-                    printf("Element doesn't exist.\n");
+                    printf("Element doesn't exist.\n\n");
                 break;
 
             case 4:
@@ -105,7 +110,11 @@ int main(int argc, char const *argv[]) {
                 break;
 
             case 5:
-                printf("Leaving...\n");
+                printf("Printing index:\n");
+                printIndex();
+                break;
+
+            case 6:
                 goto end;
 
             default:
@@ -121,5 +130,7 @@ int main(int argc, char const *argv[]) {
             fprintf(stderr, "ERROR! [fclose in main]: returned a non-zero value.\nExiting...\n");
             exit(EXIT_FAILURE);
         }
+        printf("Leaving...\n");
+
         return 0;
 }

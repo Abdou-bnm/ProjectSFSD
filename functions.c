@@ -50,13 +50,13 @@ void updateIndexFPos(FILE* file){
 
 void loadHeader(file *file)
 {
-    char *fileName = (char *)malloc(70);
+    char *fileName = (char *)malloc(FILE_NAME_MAX_SIZE + 9);
     if (fileName == NULL)
     {
         fprintf(stderr, "ERROR! [malloc 1 in loadHeader]: Couldn't allocate memory for fileName.\nExiting...\n");
         exit(EXIT_FAILURE);
     }
-    memset(fileName, 0, 70);
+    memset(fileName, 0, FILE_NAME_MAX_SIZE + 9);
     sprintf(fileName, ".%s.header", file->header.name);
 
     file->HFile = fopen(fileName, "rb");
@@ -69,8 +69,19 @@ void loadHeader(file *file)
     free(fileName);
     fread(&(file->header), sizeof(fileHeader), 1, file->HFile);
 
-    fBlock *fblck = file->head;
-    for(int i = 0; i < file->header.nbBlocks; i++){
+    file->head = (fBlock*)malloc(sizeof(fBlock));
+    if(file->head == NULL){
+        fprintf(stderr, "ERROR! [malloc 2 in loadHeader]: Couldn't allocate memory for fblck.\nExiting...\n");
+        exit(EXIT_FAILURE);
+    }
+
+    file->head->data = NULL;
+    file->head->next = NULL;
+
+    fBlock *curElem = file->head;
+    fBlock *fblck = file->head->next;
+
+    for(int i = 1; i < file->header.nbBlocks; i++){
         fblck = (fBlock*)malloc(sizeof(fBlock));
         if(fblck == NULL){
             fprintf(stderr, "ERROR! [malloc 2 in loadHeader]: Couldn't allocate memory for fblck.\nExiting...\n");
@@ -80,6 +91,8 @@ void loadHeader(file *file)
         fblck->data = NULL;
         fblck->next = NULL;
 
+        curElem->next = fblck;
+        curElem = curElem->next;
         fblck = fblck->next;
     }
 
@@ -89,7 +102,7 @@ void loadHeader(file *file)
 
 void __setBlockAtStart(block *blck)
 { // Sets the block values when first allocated.
-    blck->header.EndAddress = blck->tab;
+    blck->header.EndAddress = &blck->tab[BUFFER_MAX_SIZE - 1];
     blck->header.StartAddress = blck->tab;
     blck->header.StartFreeSpaceAddress = blck->tab;
     blck->header.NbStructs = 0;
@@ -142,7 +155,7 @@ void fileOpen(file *file)
         } while (c != '\n');
         
         if(fseek(file->RFile, -1 * size, SEEK_CUR)){
-            fprintf(stderr, "ERROR! [fseek in fileOpen]: returned a non-zero value.\nExiting...\n");
+            fprintf(stderr, "ERROR! [fseek 1 in fileOpen]: returned a non-zero value.\nExiting...\n");
             exit(EXIT_FAILURE);
         }
 
@@ -160,14 +173,13 @@ void fileOpen(file *file)
         // Updating the element in the Index
         Index.tab[Index.IndexSize].filePos = curPos;    
         Index.tab[Index.IndexSize].key = fblck->data->header.StartFreeSpaceAddress;
-        Index.tab[Index.IndexSize].endAddress = fblck->data->header.StartFreeSpaceAddress + size;
+        Index.tab[Index.IndexSize].endAddress = fblck->data->header.StartFreeSpaceAddress + size - 1;
         Index.tab[Index.IndexSize].isDeletedLogically = false;
         Index.tab[Index.IndexSize].blockAddress = fblck;
         Index.IndexSize++;
         
         // Reading the actual element into its respective block
-        for (int i = 0; i < size; i++)
-        {
+        for (int i = 0; i < size; i++){
             c = fgetc(file->RFile);
 
             switch (c){
@@ -175,7 +187,7 @@ void fileOpen(file *file)
                     fblck->data->header.StartFreeSpaceAddress[i] = '\0';
                     break;
 
-                case '\n': // character end of struct, change it to '#' if you are still using it, chahinez.
+                case '\n':
                     fblck->data->header.StartFreeSpaceAddress[i] = '\0';
                     break;
 
@@ -186,19 +198,21 @@ void fileOpen(file *file)
         }
 
         // Updating the block's header info
-        fblck->data->header.EndAddress += size;
         fblck->data->header.StartFreeSpaceAddress += size;
         fblck->data->header.NbStructs++;
         fblck->data->header.usedSpace += size;
 
-        file->header.NbStructs++;
-
-        do{ // In case of some padding
+        // In case of some padding
+        while (c == '\n' || c == '\0')
             c = fgetc(file->RFile);
-        } while (c == '\0');
-
-        if (c == EOF)
-        { // In case of reaching EOF, which means we completed the entire RFile
+        
+        if(fseek(file->RFile, -1, SEEK_CUR)){
+            fprintf(stderr, "ERROR! [fseek 2 in fileOpen]: returned a non-zero value.\nExiting...\n");
+            exit(EXIT_FAILURE);
+        }
+        
+        // In case of reaching EOF, which means we completed the entire RFile
+        if (c == EOF){
             printf("Copying RFile completed, EOF reached after end of struct.\nReturning...\n");
             return;
         }
@@ -216,7 +230,8 @@ void createfile(file *file)
     }
     file->head->next = NULL;
     file->header.NbStructs = 0;
-    printf("Enter the name of the file (max size is 35 characters, spaces NOT allowed, CASE SENSITIVE): ");
+    file->header.nbBlocks = 1;
+    printf("Enter the name of the file (max size is %d characters, spaces NOT allowed, CASE SENSITIVE): ", FILE_NAME_MAX_SIZE - 1);
     scanf("%36s", file->header.name);
 
     file->RFile = fopen(file->header.name, "w+");
@@ -260,8 +275,8 @@ short searchElement()
 // A function to insert element "element" into the permanent "RFile" in the correct position and changing the position info in Index
 void RFile_insert(FILE *file, char *element, unsigned long elementSize)
 {
-    memset(buffer, 0, sizeof(buffer));    // Clear the current buffer
-    memcpy(buffer, element, elementSize); // Copy the insered element into buffer
+    memset(buffer, 0, BUFFER_MAX_SIZE);     // Clear the current buffer
+    memcpy(buffer, element, elementSize);   // Copy the insered element into buffer
 
     short elementIndexPos = searchElement(), cpt = 0;
     if (elementIndexPos == -1)
@@ -320,11 +335,11 @@ void RFile_insert(FILE *file, char *element, unsigned long elementSize)
     }
 
     err = fread(tmp, sizeof(char), space, file); // Read the shifted elements into tmp buffer
-    if (err != space)
-    { // Error handling
-        fprintf(stderr, "ERROR! [fread in RFile_insert]: expected to read %li but got %li", space, err);
-        exit(EXIT_FAILURE);
-    }
+    // if (err != space)
+    // { // Error handling
+    //     fprintf(stderr, "ERROR! [fread in RFile_insert]: expected to read %li but got %li", space, err);
+    //     exit(EXIT_FAILURE);
+    // }
 
     Index.tab[elementIndexPos].filePos = Index.tab[elementIndexPos + 1].filePos; // Changing the filePos in the Index
     Index.tab[elementIndexPos + 1].filePos += elementSize;                       // Changing the filePos of the next element in the Index
@@ -359,6 +374,7 @@ void RFile_insert(FILE *file, char *element, unsigned long elementSize)
     free(tmp); // Free the tmp buffer
 }
 
+// PROBLEM HERE *************************************************
 int insert_inIndex(file* file, unsigned short elementSize){
     unsigned short i = 0;
     int cmpResult, j = Index.IndexSize;
@@ -400,6 +416,13 @@ int insert_inIndex(file* file, unsigned short elementSize){
         goto endFunc;
     }
 
+    // WILL TRY TO IMPLEMENT IT IN THE PREVIOUS CASE, BECAUSE THEY SHARE EXACTLY THE SAME CODE
+    // // In case we are inserting into the middle of an already full block (in the previous case, we had enough space. Now we don't)
+    // if(Index.tab[i - 1].blockAddress == Index.tab[i + 1].blockAddress){
+    //     Index.tab[i].blockAddress = Index.tab[i - 1].blockAddress;
+    //     Index.tab[i].key = Index.tab[i - 1].endAddress + 1;
+    // }
+
     // In case we need to put it at the start of the next fBlock and it is already set up (exists already)
     if(Index.tab[i + 1].blockAddress != NULL){
         Index.tab[i].blockAddress = Index.tab[i + 1].blockAddress;
@@ -432,6 +455,7 @@ int insert_inIndex(file* file, unsigned short elementSize){
         return i;
 }
 
+// this is the old one
 void update_fBlockInIndex(fBlock *fblck){
     unsigned int i = 0, j = 0;
     while(i < Index.IndexSize && Index.tab[i].blockAddress != fblck)
@@ -861,10 +885,11 @@ void printFile(file file)
     int nbFBlock = 1;
     while (file.head != NULL)
     {
-        printf("fBlock number %d:\n", nbFBlock);
+        printf("fBlock number %d:\n\n", nbFBlock);
         __printBlock(file.head->data);
         printf("\n-------------------------------------------\n");
         file.head = file.head->next;
+        nbFBlock++;
     }
 }
 
@@ -889,21 +914,26 @@ void printIndex(){
 
 void StockHeaderecFile(FILE *Recfile, file *file)
 {
-    char filename[70]; // Change the filename as needed
-    sprintf(filename, ".%s.header", (file->header).name);
+    char filename[FILE_NAME_MAX_SIZE + 9]; // Change the filename as needed
+    memset(filename, 0, FILE_NAME_MAX_SIZE + 9);
+    sprintf(filename, ".%s.header", file->header.name);
 
     // Open file for writing, create if not exists
     Recfile = fopen(filename, "wb"); // 'w' searches file. if the file exists . its contents are overwritten . if the file doesn't existe . a new file is created.
 
-    if (Recfile == NULL)
-    {
-        fprintf(stderr, "Error opening file %s\n", filename);
-        return;
+    if (Recfile == NULL){
+        fprintf(stderr, "Error creating file \"%s\".\nExiting...\n", filename);
+        exit(EXIT_FAILURE);
     }
+
+    printf("Successfully created header file \"%s\", Continuing...\n", filename);
 
     // Write fileHeader to the file
     fwrite(&(file->header), sizeof(fileHeader), 1, Recfile);
 
     // Close the file
-    fclose(Recfile);
+    if(fclose(Recfile)){
+        fprintf(stderr, "ERROR! [fclose in StockHeaderecFile]: Couldn't close header file \"%s\".\nContinuing...\n", filename);
+    }
 }
+/// -----------------------------------------------------------------------------------------------------------------------
