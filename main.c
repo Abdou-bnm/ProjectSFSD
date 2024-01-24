@@ -41,57 +41,23 @@ int main(int argc, char const *argv[]) {
         scanf("%hu", &answer);
         switch(answer){
             case 1:
-                // Insert function
-                //entrer la cle 
-                printf("enter the key (%d characters MAX, NO spaces): ", KEY_MAX_SIZE - 1);
+               // Insert function
+                printf("Enter the key to the element (%hu max characters, NO SPACES and CASE SENSITIVE): ", KEY_MAX_SIZE - 1);
                 scanf("%16s", buffer);
                 getchar();
-                int i=0;
-                char TabKey[KEY_MAX_SIZE],TabRest[BUFFER_MAX_SIZE];
-                int N=strlen(buffer);
-                for(int i=0;i<N;i++){
-                    TabKey[i]=buffer[i];
-                }
-                TabKey[i]='\0'; // "\0"
-                buffer[i]='a';
-                int k=i;
-                int SizeTabKey=strlen(TabKey);
+                unsigned short keySize = strlen(buffer) + 1, element_Size;
 
-            //insertion of the rest of the struct
-                printf("enter the rest of the structs: ");
-                fgets(buffer+SizeTabKey+1,BUFFER_MAX_SIZE-SizeTabKey-3,stdin); 
-                buffer[i]='\0';
-                buffer[i+1]='\0';
-                int SizeBuffer=strlen(buffer);
-                buffer[k]='\0';
+                printf("enter the rest of the structs (max size of %hu due to lack of overlap, spaces allowed): ", BUFFER_MAX_SIZE - keySize);
+                fgets(buffer + keySize, BUFFER_MAX_SIZE - keySize, stdin);
 
-                for(int i=SizeTabKey+1;i<SizeBuffer;i++){
-                    TabRest[i]=buffer[i];
-                }
+                element_Size = keySize + strlen(buffer + keySize);
+                buffer[element_Size - 1] = '\0';
 
-                int SizeTabRest = strlen(TabRest);
-                file.head=insertion(file.head,TabKey,SizeTabKey,SizeTabRest);
+                //system("clear");
+                insert(&file, element_Size);
                 
-                // From now on this bullshit I wrote, bidma chahinez tkamel l khadma, bach n tester la fonction ta3i, and it worked successfully.
-                // Bach temchi hadi, commentit m ligne 47 (int i=0;) 7ata 71 (file.head=insertion(file.head,TabKey,SizeTabKey,SizeTabRest);).
-                
-                // int keySize = strlen(buffer);
-                
-                // printf("enter the rest of the structs: ");
-                // fgets(buffer + keySize + 1, BUFFER_MAX_SIZE - keySize, stdin);
-                
-                // int dataSize = strlen(buffer + keySize + 1);
-                // buffer[keySize + dataSize] = '\0';
-                // dataSize = strlen(buffer + keySize + 1);
-
-                // char *tmp = (char*)malloc(BUFFER_MAX_SIZE);
-                // memcpy(tmp, buffer, BUFFER_MAX_SIZE);
-
-                // RFile_insert(file.RFile, tmp, keySize + 1 + dataSize + 1);
-                // free(tmp);
-                
-                // break;
-            
+             break;
+           
             case 2:
                 // Delete function
                 printf("Enter the key to Delete Element (Keys does NOT contain spaces) and a maximum size of %d: ", KEY_MAX_SIZE - 1);
