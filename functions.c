@@ -8,23 +8,6 @@ block MS[MEMORY_BLOCK_MAX];    // The Memory which will contain all the blocks o
 IndexType Index;              // An index associated to the file containing useful information for various operations.
 /// -----------------------------------------------------------------------------------------------------------------------
 
-char defiler(char file[2 * BUFFER_MAX_SIZE], int *Endfile)
-{
-    char car = file[0];
-    for (int i = 0; i < 99; i++)
-    {
-        *(file + i) = *(file + i + 1);
-    }
-    (*Endfile)--;
-    return car;
-}
-
-void enfiler(char file[2 * BUFFER_MAX_SIZE], char car, int *Endfile)
-{
-    *(file + *Endfile) = car;
-    (*Endfile)++;
-}
-
 block *allocBlock()
 {
     for (int i = 0; i < 16; i++)
@@ -375,7 +358,7 @@ void RFile_insert(FILE *file, char *element, unsigned long elementSize)
 
     free(tmp); // Free the tmp buffer
 }
-// PROBLEM HERE *************************************************
+
 int insert_inIndex(file* file, unsigned short elementSize){
     unsigned short i = 0;
     int cmpResult, j = Index.IndexSize;
@@ -417,13 +400,6 @@ int insert_inIndex(file* file, unsigned short elementSize){
         goto endFunc;
     }
 
-    // WILL TRY TO IMPLEMENT IT IN THE PREVIOUS CASE, BECAUSE THEY SHARE EXACTLY THE SAME CODE
-    // // In case we are inserting into the middle of an already full block (in the previous case, we had enough space. Now we don't)
-    // if(Index.tab[i - 1].blockAddress == Index.tab[i + 1].blockAddress){
-    //     Index.tab[i].blockAddress = Index.tab[i - 1].blockAddress;
-    //     Index.tab[i].key = Index.tab[i - 1].endAddress + 1;
-    // }
-
     // In case we need to put it at the start of the next fBlock and it is already set up (exists already)
     if(Index.tab[i + 1].blockAddress != NULL){
         Index.tab[i].blockAddress = Index.tab[i + 1].blockAddress;
@@ -456,7 +432,6 @@ int insert_inIndex(file* file, unsigned short elementSize){
         return i;
 }
 
-// this is the old one
 void update_fBlockInIndex(fBlock *fblck){
     unsigned int i = 0, j = 0;
     while(i < Index.IndexSize && Index.tab[i].blockAddress != fblck)

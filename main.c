@@ -42,7 +42,6 @@ int main(int argc, char const *argv[]) {
         switch(answer){
             case 1:
                // Insert function
-
                 printf("Enter the key to the element (%hu max characters, NO SPACES and CASE SENSITIVE): ", KEY_MAX_SIZE - 1);
                 scanf("%16s", buffer);
                 getchar();
@@ -57,7 +56,8 @@ int main(int argc, char const *argv[]) {
                 //system("clear");
                 insert(&file, element_Size);
                 
-             break;;
+             break;
+           
             case 2:
                 // Delete function
                 printf("Enter the key to Delete Element (Keys does NOT contain spaces) and a maximum size of %d: ", KEY_MAX_SIZE - 1);
