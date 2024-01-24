@@ -685,7 +685,7 @@ void RFile_Delete(FILE *file, short elementIndexPos)
     char c;
 
     fseek(file, 0, SEEK_END);
-    unsigned long shiftSize = ftell(file) - (pos + taille) + 1;        // formula to get how many bytes will be shifted
+    unsigned long shiftSize = ftell(file) - (pos + taille) ;        // formula to get how many bytes will be shifted
 
     char* tmpBuffer = (char*)malloc(shiftSize);
     if(tmpBuffer == NULL){
