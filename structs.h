@@ -1,6 +1,4 @@
-#ifndef PRIMARY_HEADER_H
-#define PRIMARY_HEADER_H
-
+#define KEY_MAX_SIZE 16
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -61,47 +59,15 @@ typedef struct indexElement{
 }indexElement;                  
 
 typedef struct IndexType{
-    indexElement tab[INDEX_ELEMENT_MAX]; 
+    indexElement tab[36]; 
     unsigned short IndexSize;  
 }IndexType;
 
-///------------------------------------------------------------------------------------------------------------------------
-
-/// Part of function Declaration ------------------------------------------------------------------------------------------
-
-block* allocBlock();
-void createfile(file* file);
-short __recuSearch(unsigned short startIndex, unsigned short endIndex, char* key);
-short searchElement();
-void ElementShift(char** NewElementPos,char* StartCurElementPos,char* EndCurElementPos);
-int CalculateSpace(char *StartEspaceAddress, char *EndEspaceAddress);
-void UpdateIndexDelete(int IndexElementDeleted);
-void UpdateFileStruct(file* file);
-void DeleteElementLogique(FILE* RFile);
-int DeleteElementPhysique(file *file,FILE *Rfile);
-void decimalPrint(char* src, int size);
-void __printBlock(block* block);
-void printFile(file file);
-void printIndex();
-void __setBlockAtStart(block* blck);
-void fileOpen(file* file);
-void StockHeaderecFile(FILE *Recfile, file *file);
-void loadHeader(file *file);
-void RFile_Delete(FILE *file, short elementIndexPos);
-void updateIndexFPos(FILE* file);
-void RFile_insert(FILE* file, char* element, unsigned long elementSize);
-int insert_inIndex(file* file, unsigned short element_Size);
-void update_fBlockInIndex(fBlock *fblck);
-void update_fBlockHeader(fBlock* fblck);
-void RecuInsert(file* file, fBlock* fblck, char* element, unsigned short elementSize, unsigned short shiftStart);
-void insert(file* file, unsigned short element_Size);
-
-/// Part of Variable Declaration ------------------------------------------------------------------------------------------
-
 // Global variables
-extern char buffer[BUFFER_MAX_SIZE];               // A buffer to transfer data between RAM and Memory (used for file manipulation operations).
-extern block MS[MEMORY_BLOCK_MAX];                  // The Memory which will contain all the blocks of the linked list and other blocks used by default.
-extern IndexType Index;                            // An index associated to the file containing useful information for various operations.
-/// -----------------------------------------------------------------------------------------------------------------------
+block buffer;                               // A buffer to transfer data between RAM and Memory (used for file manipulation operations).
+//indexElement Index[36];                     // An index associated to the file containing useful information for various operations.
+//unsigned short indexSize = 0;               // The index of the first free element in the index.
+block MS[16];                               // The Memory which will contain all the blocks of the linked list and other blocks used by default.
+IndexType Index;
 
-#endif
+
