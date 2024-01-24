@@ -9,15 +9,17 @@
 #define KEY_MAX_SIZE 16
 #define BUFFER_MAX_SIZE 50
 #define INDEX_ELEMENT_MAX 36
-#define Memory_Bloc_Max 16
+#define MEMORY_BLOCK_MAX 16
+#define FILE_NAME_MAX_SIZE 32
 
 /// Part of Struct Declaration -----------------------------------------------------------------------------------
 
 // The declaration of the header of a file.
 typedef struct fileHeader{
-    unsigned int nbBlocks;                  // Number of blocks used by file
-    unsigned int NbStructs;                 // Number of structs in file
-    char name[36];                          // Name of file, no path included
+
+    unsigned short nbBlocks;                // Number of blocks used by file
+    unsigned short NbStructs;               // Number of structs in file
+    char name[FILE_NAME_MAX_SIZE];          // Name of file, no path included
 }fileHeader;
 
 // The declaration of the header of a block.
@@ -25,7 +27,7 @@ typedef struct blockHeader{
     unsigned short NbStructs;               // The number of structs in the block
     unsigned short usedSpace;               // The number of used bytes in the block
     char* StartAddress;                     // The address of the 1st element in the block (block.tab)
-    char* EndAddress;                       
+    char* EndAddress;                       // The address of the last element in the block (block.tab[BUFFER_MAX_SIZE - 1])
     char* StartFreeSpaceAddress;            // The address of the 1st free element in the block
 }blockHeader;
 
@@ -67,33 +69,33 @@ typedef struct IndexType{
 ///------------------------------------------------------------------------------------------------------------------------
 
 /// Part of function Declaration ------------------------------------------------------------------------------------------
-
-char defiler(char file[2*BUFFER_MAX_SIZE],int *Endfile);
-void enfiler(char file[2*BUFFER_MAX_SIZE],char car,int *Endfile);
 block* allocBlock();
 void createfile(file* file);
 short __recuSearch(unsigned short startIndex, unsigned short endIndex, char* key);
 short searchElement();
-fBlock *insertion(fBlock *head,char TabKey[KEY_MAX_SIZE],int SizeTabKey,int SizeTabRest);
-void ElementShift(char** NewElementPos,char* StartCurElementPos,char* EndCurElementPos);
-int CalculateSpace(char *StartEspaceAddress, char *EndEspaceAddress);
-void UpdateIndexDelete(int IndexElementDeleted);
-void UpdateFileStruct(file* file);
-void DeleteElementLogique();
-int DeleteElementPhysique(file* file);
-void decimalPrint(char* src, int size);
+void indexDelete(unsigned short elementIndex);
+int DeleteElementLogique(FILE* RFile);
+int DeleteElementPhysique(file *file);
 void __printBlock(block* block);
 void printFile(file file);
-void RFile_insert(FILE* file, char* element, unsigned long elementSize);
 void __setBlockAtStart(block* blck);
 void fileOpen(file* file);
-/// -----------------------------------------------------------------------------------------------------------------------
+void StockHeaderecFile(FILE *Recfile, file *file);
+void loadHeader(file *file);
+void RFile_Delete(FILE *file, short elementIndexPos);
+void updateIndexFPos(FILE* file);
+void RFile_insert(FILE* file, char* element, unsigned long elementSize);
+int insert_inIndex(file* file, unsigned short element_Size);
+void update_fBlockInIndex(fBlock *fblck);
+void update_fBlockHeader(fBlock* fblck);
+int RecuInsert(file* file, fBlock* fblck, char* element, unsigned short elementSize, unsigned short shiftStart);
+int insert(file* file, unsigned short element_Size);
 
 /// Part of Variable Declaration ------------------------------------------------------------------------------------------
 
 // Global variables
 extern char buffer[BUFFER_MAX_SIZE];               // A buffer to transfer data between RAM and Memory (used for file manipulation operations).
-extern block MS[Memory_Bloc_Max];                               // The Memory which will contain all the blocks of the linked list and other blocks used by default.
+extern block MS[MEMORY_BLOCK_MAX];                  // The Memory which will contain all the blocks of the linked list and other blocks used by default.
 extern IndexType Index;                            // An index associated to the file containing useful information for various operations.
 /// -----------------------------------------------------------------------------------------------------------------------
 
