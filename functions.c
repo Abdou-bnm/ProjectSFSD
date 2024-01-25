@@ -8,8 +8,7 @@ block MS[MEMORY_BLOCK_MAX];    // The Memory which will contain all the blocks o
 IndexType Index;              // An index associated to the file containing useful information for various operations.
 /// -----------------------------------------------------------------------------------------------------------------------
 
-block *allocBlock()
-{
+block *allocBlock(){
     for (int i = 0; i < 16; i++)
         if (MS[i].isUsed == 0)
         {
@@ -42,7 +41,7 @@ void updateIndexFPos(FILE* file){
 
         Index.tab[i].filePos = curPos;
         while(c != '\n')                            // Avancing until the end of the current element
-            fgetc(file);
+            c = fgetc(file);
         
         fgetc(file);                                // One more time to set it to the start of the next element
     }
@@ -50,13 +49,13 @@ void updateIndexFPos(FILE* file){
 
 void loadHeader(file *file)
 {
-    char *fileName = (char *)malloc(70);
+    char *fileName = (char *)malloc(FILE_NAME_MAX_SIZE + 9);
     if (fileName == NULL)
     {
         fprintf(stderr, "ERROR! [malloc 1 in loadHeader]: Couldn't allocate memory for fileName.\nExiting...\n");
         exit(EXIT_FAILURE);
     }
-    memset(fileName, 0, 70);
+    memset(fileName, 0, FILE_NAME_MAX_SIZE + 9);
     sprintf(fileName, ".%s.header", file->header.name);
 
     file->HFile = fopen(fileName, "rb");
@@ -69,8 +68,19 @@ void loadHeader(file *file)
     free(fileName);
     fread(&(file->header), sizeof(fileHeader), 1, file->HFile);
 
-    fBlock *fblck = file->head;
-    for(int i = 0; i < file->header.nbBlocks; i++){
+    file->head = (fBlock*)malloc(sizeof(fBlock));
+    if(file->head == NULL){
+        fprintf(stderr, "ERROR! [malloc 2 in loadHeader]: Couldn't allocate memory for fblck.\nExiting...\n");
+        exit(EXIT_FAILURE);
+    }
+
+    file->head->data = NULL;
+    file->head->next = NULL;
+
+    fBlock *curElem = file->head;
+    fBlock *fblck = file->head->next;
+
+    for(int i = 1; i < file->header.nbBlocks; i++){
         fblck = (fBlock*)malloc(sizeof(fBlock));
         if(fblck == NULL){
             fprintf(stderr, "ERROR! [malloc 2 in loadHeader]: Couldn't allocate memory for fblck.\nExiting...\n");
@@ -80,6 +90,8 @@ void loadHeader(file *file)
         fblck->data = NULL;
         fblck->next = NULL;
 
+        curElem->next = fblck;
+        curElem = curElem->next;
         fblck = fblck->next;
     }
 
@@ -89,7 +101,7 @@ void loadHeader(file *file)
 
 void __setBlockAtStart(block *blck)
 { // Sets the block values when first allocated.
-    blck->header.EndAddress = blck->tab;
+    blck->header.EndAddress = &blck->tab[BUFFER_MAX_SIZE - 1];
     blck->header.StartAddress = blck->tab;
     blck->header.StartFreeSpaceAddress = blck->tab;
     blck->header.NbStructs = 0;
@@ -142,7 +154,7 @@ void fileOpen(file *file)
         } while (c != '\n');
         
         if(fseek(file->RFile, -1 * size, SEEK_CUR)){
-            fprintf(stderr, "ERROR! [fseek in fileOpen]: returned a non-zero value.\nExiting...\n");
+            fprintf(stderr, "ERROR! [fseek 1 in fileOpen]: returned a non-zero value.\nExiting...\n");
             exit(EXIT_FAILURE);
         }
 
@@ -160,14 +172,13 @@ void fileOpen(file *file)
         // Updating the element in the Index
         Index.tab[Index.IndexSize].filePos = curPos;    
         Index.tab[Index.IndexSize].key = fblck->data->header.StartFreeSpaceAddress;
-        Index.tab[Index.IndexSize].endAddress = fblck->data->header.StartFreeSpaceAddress + size;
+        Index.tab[Index.IndexSize].endAddress = fblck->data->header.StartFreeSpaceAddress + size - 1;
         Index.tab[Index.IndexSize].isDeletedLogically = false;
         Index.tab[Index.IndexSize].blockAddress = fblck;
         Index.IndexSize++;
         
         // Reading the actual element into its respective block
-        for (int i = 0; i < size; i++)
-        {
+        for (int i = 0; i < size; i++){
             c = fgetc(file->RFile);
 
             switch (c){
@@ -175,7 +186,7 @@ void fileOpen(file *file)
                     fblck->data->header.StartFreeSpaceAddress[i] = '\0';
                     break;
 
-                case '\n': // character end of struct, change it to '#' if you are still using it, chahinez.
+                case '\n':
                     fblck->data->header.StartFreeSpaceAddress[i] = '\0';
                     break;
 
@@ -186,20 +197,21 @@ void fileOpen(file *file)
         }
 
         // Updating the block's header info
-        fblck->data->header.EndAddress += size;
         fblck->data->header.StartFreeSpaceAddress += size;
         fblck->data->header.NbStructs++;
         fblck->data->header.usedSpace += size;
 
-        file->header.NbStructs++;
-
-        do{ // In case of some padding
+        // In case of some padding
+        while (c == '\n' || c == '\0')
             c = fgetc(file->RFile);
-        } while (c == '\0');
-
-        if (c == EOF)
-        { // In case of reaching EOF, which means we completed the entire RFile
-            printf("Copying RFile completed, EOF reached after end of struct.\nReturning...\n");
+        
+        if(fseek(file->RFile, -1, SEEK_CUR)){
+            fprintf(stderr, "ERROR! [fseek 2 in fileOpen]: returned a non-zero value.\nExiting...\n");
+            exit(EXIT_FAILURE);
+        }
+        
+        // In case of reaching EOF, which means we completed the entire RFile
+        if (c == EOF){
             return;
         }
     } // Else, we go into another iteration
@@ -216,7 +228,8 @@ void createfile(file *file)
     }
     file->head->next = NULL;
     file->header.NbStructs = 0;
-    printf("Enter the name of the file (max size is 35 characters, spaces NOT allowed, CASE SENSITIVE): ");
+    file->header.nbBlocks = 1;
+    printf("Enter the name of the file (max size is %d characters, spaces NOT allowed, CASE SENSITIVE): ", FILE_NAME_MAX_SIZE - 1);
     scanf("%36s", file->header.name);
 
     file->RFile = fopen(file->header.name, "w+");
@@ -260,8 +273,8 @@ short searchElement()
 // A function to insert element "element" into the permanent "RFile" in the correct position and changing the position info in Index
 void RFile_insert(FILE *file, char *element, unsigned long elementSize)
 {
-    memset(buffer, 0, sizeof(buffer));    // Clear the current buffer
-    memcpy(buffer, element, elementSize); // Copy the insered element into buffer
+    memset(buffer, 0, BUFFER_MAX_SIZE);     // Clear the current buffer
+    memcpy(buffer, element, elementSize);   // Copy the insered element into buffer
 
     short elementIndexPos = searchElement(), cpt = 0;
     if (elementIndexPos == -1)
@@ -505,7 +518,7 @@ void update_fBlockHeader(fBlock* fblck){
     fblck->data->header.usedSpace = j + 1;
 }
 
-void RecuInsert(file* file, fBlock* fblck, char* element, unsigned short elementSize, unsigned short shiftStart){
+int RecuInsert(file* file, fBlock* fblck, char* element, unsigned short elementSize, unsigned short shiftStart){
     if(BUFFER_MAX_SIZE - fblck->data->header.usedSpace >= elementSize){
         for(int i = fblck->data->header.usedSpace; i >= shiftStart; i--)
             fblck->data->tab[i + elementSize] = fblck->data->tab[i];
@@ -526,7 +539,9 @@ void RecuInsert(file* file, fBlock* fblck, char* element, unsigned short element
         fblck->next->data = allocBlock();
         if(fblck->next->data == NULL){
             fprintf(stderr, "ERROR! [allocBlock in recuInsert]: Couldn't find a block in MS.\nReturning...\n");
-            goto endOfFunction;
+            
+            free(element);
+            return 1;
         }
 
         file->header.nbBlocks++;
@@ -585,13 +600,13 @@ void RecuInsert(file* file, fBlock* fblck, char* element, unsigned short element
         free(element);
         update_fBlockInIndex(fblck);
         update_fBlockHeader(fblck);
-        return;
+        return 0;
 }
 
-void insert(file* file, unsigned short element_Size){
+int insert(file* file, unsigned short element_Size){
     int elementNumber = insert_inIndex(file, element_Size);
     if(elementNumber == -1)
-        return;
+        return 1;
 
     // Creating 2 temporary strings, 1 RecuInsert (it will be freed) and the 2nd for RFile_insert (buffer will be set to 0)
     char* tmpElement1 = (char*)malloc(element_Size + 1);
@@ -616,68 +631,29 @@ void insert(file* file, unsigned short element_Size){
 
     element_IndiceInBlock = (unsigned long) Index.tab[elementNumber].key - (unsigned long) element_fBlck->data->tab;
 
-    RecuInsert(file, element_fBlck, tmpElement1, element_Size, element_IndiceInBlock);
+    if(RecuInsert(file, element_fBlck, tmpElement1, element_Size, element_IndiceInBlock))
+        return 1;
 
     RFile_insert(file->RFile, tmpElement2, element_Size);
 
-    printf("insert function completed executing successfully.\n");
+    return 0;
 }
-
 //--------------------------------------------------------------------------------------------
 // Suppression Section
-void ElementShift(char **NewElementPos, char *StartCurElementPos, char *EndCurElementPos)
-{
-    // Shift the Element to New Pos
-    while (StartCurElementPos != EndCurElementPos)
-    {
-        **NewElementPos = *StartCurElementPos;
-        *StartCurElementPos = 0;
-        *NewElementPos += sizeof(char);
-        StartCurElementPos += sizeof(char);
-    }
-    **NewElementPos = *StartCurElementPos;
-}
-
-int CalculateSpace(char *StartEspaceAddress, char *EndEspaceAddress)
-{
-    return EndEspaceAddress - StartEspaceAddress;
-}
-
-// Function to update index array (Delete Element)
-void UpdateIndexDelete(int IndexElementDeleted)
-{
-    for (int ElementIndex = IndexElementDeleted; ElementIndex < Index.IndexSize; ElementIndex++)
-    {
-        Index.tab[ElementIndex] = Index.tab[ElementIndex + 1];
-    }
-
-    Index.IndexSize--;
-}
-
-// Function to update File
-void UpdateFileStruct(file *file)
-{
-    fBlock *ftmp = (*file).head;
-    while ((ftmp)->next != NULL)
-    {
-        ftmp = ftmp->next;
-    }
-}
 
 // Function to delete an element from the file (Logical)
-void DeleteElementLogique(FILE* RFile)
-{
+int DeleteElementLogique(FILE* RFile){
+    
     short indexElement = searchElement();
-    if (indexElement == -1)
-    {
+    if(indexElement == -1){
         printf("\nERROR! [Searching for Element]:already deleted or not Existe ");
-        return;
+        return 1;
     }
-    else
-    {
-        Index.tab[indexElement].isDeletedLogically = true;
-        RFile_Delete(RFile, indexElement);
-    }
+ 
+    Index.tab[indexElement].isDeletedLogically = true;
+    RFile_Delete(RFile, indexElement);
+
+    return 0;
 }
 
 // Delete in RFile
@@ -707,136 +683,103 @@ void RFile_Delete(FILE *file, short elementIndexPos)
     unsigned short pos = (Index.tab[elementIndexPos].filePos);
     unsigned long taille = (Index.tab[elementIndexPos].endAddress - Index.tab[elementIndexPos].key);
     char c;
-    fseek(file, pos + taille, SEEK_SET);
-    // Shift the remaining characters to the left
-    int size;
-    int i = 0;
-    while ((c = fgetc(file)) != EOF)
-    {
-        memset(buffer, 0, sizeof(buffer)); // Clear the current buffer
-        i = 1;
-        size=1;
-        buffer[0] = c;
-        
-        do  // Copy Record to Buffer
-        {   
-            c = fgetc(file);
-            buffer[i] = c;
-            i++;
-        } while (c != '\n');
-        
-        buffer[i] = '\0';
 
-        fseek(file,pos, SEEK_SET);
-        fputs(buffer, file); //Shift the record to new pos
-        pos = pos + i;
-        fseek(file, ftell(file) + taille, SEEK_SET);// Jump to next Record
+    fseek(file, 0, SEEK_END);
+    unsigned long shiftSize = ftell(file) - (pos + taille);        // formula to get how many bytes will be shifted
+
+    char* tmpBuffer = (char*)malloc(shiftSize);
+    if(tmpBuffer == NULL){
+        fprintf(stderr, "ERROR! [malloc in RFile_delete]: Couldn't allocate space for tmpBuffer.\nExiting...\n");
+        exit(EXIT_FAILURE);
     }
+
+    if(fseek(file, pos + taille, SEEK_SET)){
+        fprintf(stderr, "ERROR! [fseek in RFile_delete]: returned a non-zero value.\nExiting...\n");
+        exit(EXIT_FAILURE);
+    }
+
+    unsigned long tmp = fread(tmpBuffer, 1, shiftSize, file);
+    if(tmp != shiftSize){
+        fprintf(stderr, "ERROR! [fread in RFile_delete]: expected to read %lu but read %lu.\nExiting...\n", shiftSize, tmp);
+        exit(EXIT_FAILURE);
+    }
+
+    if(fseek(file, pos, SEEK_SET)){
+        fprintf(stderr, "ERROR! [fseek in RFile_delete]: returned a non-zero value.\nExiting...\n");
+        exit(EXIT_FAILURE);
+    }
+
+    tmp = fwrite(tmpBuffer, 1, shiftSize, file);
+    if(tmp != shiftSize){
+        fprintf(stderr, "ERROR! [fread in RFile_delete]: expected to write %lu but read %lu.\nExiting...\n", shiftSize, tmp);
+        exit(EXIT_FAILURE);
+    }
+
+    fputc(-1, file);
+}
+
+void indexDelete(unsigned short elementIndex){
+    for(unsigned short i = elementIndex; i < Index.IndexSize; i++)
+        Index.tab[i] = Index.tab[i + 1];
+
+    Index.IndexSize--;
 }
 
 // Function to delete an element from the file (Physique)
-int DeleteElementPhysique(file *file,FILE *Rfile){
-
-    // Search for the index of the element to be deleted
-    short indexElementDeleted = searchElement();
-
-    // Check if the element is not found or already deleted
-    if (indexElementDeleted == -1)
-    {
-        printf("\nERROR! [Searching for Element]:already deleted or not Existe");
-        return -1;
+int DeleteElementPhysique(file *file){
+    short elementIndex = searchElement();
+    if(elementIndex == -1){
+        fprintf(stderr, "ERROR! [searchElement in DeleteElementPhysique]: Element doesn't exist.\nReturning...\n");
+        return 1;
     }
-    else
-    {
-        unsigned short NbElement = -1;
-        int FreeSpace = 0;
-        char *EndCurElementPos, *StartCurElementPos;
-        char *NewElementPos = Index.tab[indexElementDeleted].key;
-        block *blockAddressdataRecover = (Index.tab[indexElementDeleted].blockAddress)->data; // Save Address of Block
-        for (int i = indexElementDeleted + 1; i < Index.IndexSize; i++)
-        {
-            // Verify if the Shift Will be in the Same Block or not
-            if ((Index.tab[i].blockAddress)->data != (Index.tab[i - 1].blockAddress)->data) // Shift the element into a different block
-            {
-                FreeSpace = (((Index.tab[i - 1].blockAddress)->data)->header).EndAddress - NewElementPos; // Calculate the remaining free space in the block
-                // Verify if FreeSpace is sufficient for the Element
-                if (CalculateSpace(Index.tab[i].key, Index.tab[i].endAddress) <= FreeSpace) // FreeSpace is sufficient => Make the Element in the FreeSpace
-                {
-                    EndCurElementPos = Index.tab[i].endAddress;
-                    StartCurElementPos = Index.tab[i].key;
-                    Index.tab[i].key = NewElementPos;
-                    ElementShift(&NewElementPos, StartCurElementPos, EndCurElementPos);
-                    Index.tab[i].endAddress = NewElementPos;
-                    *NewElementPos += 2 * sizeof(char);
-                    NbElement++;
-                }
-                else // FreeSpace isn't sufficient => Make the Element in New Block
-                {
-                    if (NbElement == -1) // element deleted was in base of block and the next element have more space
-                    {
-                        (((Index.tab[i].blockAddress)->data)->header).NbStructs -= NbElement + 1; // Update Number of Element in New Block
-                    }
-                    (((Index.tab[i - 1].blockAddress)->data)->header).NbStructs += NbElement; // Update Number of Element in Current Block
 
-                    NbElement = 0;
-                    NewElementPos = blockAddressdataRecover->tab;
-                    EndCurElementPos = Index.tab[i].endAddress;
-                    StartCurElementPos = Index.tab[i].key;
-                    if (NewElementPos == StartCurElementPos)
-                    {
-                        return -1; // Shift Complete (Block no need to do shift on it)
-                    }
-                    Index.tab[i].key = NewElementPos;
-                    ElementShift(&NewElementPos, StartCurElementPos, EndCurElementPos);
-                    Index.tab[i].endAddress = NewElementPos;
-                    *NewElementPos += 2 * sizeof(char);
-                }
-            }
-            else // Shift the element within the same block
-            {
-                EndCurElementPos = Index.tab[i].endAddress;
-                StartCurElementPos = Index.tab[i].key;
-                Index.tab[i].key = NewElementPos;
-                ElementShift(&NewElementPos, StartCurElementPos, EndCurElementPos);
-                Index.tab[i].endAddress = NewElementPos;
-                *NewElementPos += 2 * sizeof(char);
-            }
-            // Update the block address for the next iteration
-            blockAddressdataRecover = (Index.tab[i].blockAddress)->data;
-        }
+    file->header.NbStructs--;
 
-        // Update IndexArray to reflect the deletion
-        UpdateIndexDelete(indexElementDeleted);
+    RFile_Delete(file->RFile, elementIndex);
+    updateIndexFPos(file->RFile);
 
-        // Update Last Block
-        if ((((Index.tab[Index.IndexSize].blockAddress)->data)->header).NbStructs == 0)
-        {
-            ((Index.tab[Index.IndexSize].blockAddress)->data)->isUsed = false;
-        }
+    if(Index.tab[elementIndex].blockAddress != Index.tab[elementIndex + 1].blockAddress && elementIndex == 0){
+        memset(Index.tab[elementIndex].blockAddress->data->tab, 0, BUFFER_MAX_SIZE);
+        file->header.NbStructs = 0;
+        file->header.nbBlocks = 0;
+        __setBlockAtStart(Index.tab[elementIndex].blockAddress->data);
+        indexDelete(elementIndex);
 
-        // Update nb Element in file header
-        file->header.NbStructs--;
-
-        // Delete in the Rfile  
-        RFile_Delete(Rfile,indexElementDeleted);
-
-        printf("\nElement Deleted Successfully!\n");
+        return 0;
     }
+
+    if( (Index.tab[elementIndex - 1].blockAddress != Index.tab[elementIndex].blockAddress) && (Index.tab[elementIndex].blockAddress != \
+    Index.tab[elementIndex + 1].blockAddress)){
+        Index.tab[elementIndex - 1].blockAddress->next = Index.tab[elementIndex + 1].blockAddress;
+        memset(Index.tab[elementIndex].blockAddress->data, 0, sizeof(Index.tab[elementIndex].blockAddress->data));
+        file->header.nbBlocks--;
+        indexDelete(elementIndex);
+
+        return 0;
+    }
+
+    unsigned long elementSize = Index.tab[elementIndex].endAddress - Index.tab[elementIndex].key + 1;
+
+    memcpy(buffer, Index.tab[elementIndex].blockAddress->data->tab, BUFFER_MAX_SIZE);
+
+    // Indice of 1st character of the element after Index.tab[elementIndex]
+    unsigned long i = Index.tab[elementIndex].endAddress - Index.tab[elementIndex].blockAddress->data->tab + 1;
+
+    for(i; i < BUFFER_MAX_SIZE; i++)
+        buffer[i - elementSize] = buffer[i];
+
+    memcpy(Index.tab[elementIndex].blockAddress->data->tab, buffer, BUFFER_MAX_SIZE);
+    fBlock* oldfBlockAdresse = Index.tab[elementIndex].blockAddress;
+    indexDelete(elementIndex);
+    update_fBlockInIndex(oldfBlockAdresse);
+    update_fBlockHeader(oldfBlockAdresse);
+
+    return 0;
 }
+
 ///----------------------------------------------------------------------------------------------------------------
 
 // Print Section
-
-// Prints the data in decimal and below it the asscoiated character to that ASCII code, similair to hexdump, useful for debugging
-void decimalPrint(char *src, int size)
-{
-    for (int i = 0; i < size; i++)
-        printf("%d\t", src[i]);
-    printf("\n");
-    for (int i = 0; i < size; i++)
-        printf("%c\t", src[i]);
-    printf("\n\n");
-}
 
 // Prints a block, struct by struct
 void __printBlock(block *block)
@@ -859,28 +802,12 @@ void __printBlock(block *block)
 void printFile(file file)
 {
     int nbFBlock = 1;
-    while (file.head != NULL)
-    {
+    while (file.head != NULL){
         printf("fBlock number %d:\n", nbFBlock);
         __printBlock(file.head->data);
         printf("\n-------------------------------------------\n");
         file.head = file.head->next;
-    }
-}
-
-// Prints the index's elements in an organized manner
-void printIndex(){
-    printf("Printing index of size IndexSize = %hu:\n\n", Index.IndexSize);
-    for(int i = 0; i < Index.IndexSize; i++){
-        printf("Element %d:\n", i + 1);
-        printf("Block address: %p\n", Index.tab[i].blockAddress);
-        printf("Key (first element) address: %p\n", Index.tab[i].key);
-        printf("endAddress (last element): %p\n", Index.tab[i].endAddress);
-        printf("Position in RFile: %lu\n", Index.tab[i].filePos);
-        if(Index.tab[i].isDeletedLogically)
-            printf("IsDeletedLogically: True\n\n");
-        else
-            printf("IsDeletedLogically: False\n\n");
+        nbFBlock++;
     }
 }
 ///-----------------------------------------------------------------------------

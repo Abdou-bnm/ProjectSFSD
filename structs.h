@@ -73,16 +73,11 @@ block* allocBlock();
 void createfile(file* file);
 short __recuSearch(unsigned short startIndex, unsigned short endIndex, char* key);
 short searchElement();
-void ElementShift(char** NewElementPos,char* StartCurElementPos,char* EndCurElementPos);
-int CalculateSpace(char *StartEspaceAddress, char *EndEspaceAddress);
-void UpdateIndexDelete(int IndexElementDeleted);
-void UpdateFileStruct(file* file);
-void DeleteElementLogique(FILE* RFile);
-int DeleteElementPhysique(file *file,FILE *Rfile);
-void decimalPrint(char* src, int size);
+void indexDelete(unsigned short elementIndex);
+int DeleteElementLogique(FILE* RFile);
+int DeleteElementPhysique(file *file);
 void __printBlock(block* block);
 void printFile(file file);
-void printIndex();
 void __setBlockAtStart(block* blck);
 void fileOpen(file* file);
 void StockHeaderecFile(FILE *Recfile, file *file);
@@ -93,8 +88,8 @@ void RFile_insert(FILE* file, char* element, unsigned long elementSize);
 int insert_inIndex(file* file, unsigned short element_Size);
 void update_fBlockInIndex(fBlock *fblck);
 void update_fBlockHeader(fBlock* fblck);
-void RecuInsert(file* file, fBlock* fblck, char* element, unsigned short elementSize, unsigned short shiftStart);
-void insert(file* file, unsigned short element_Size);
+int RecuInsert(file* file, fBlock* fblck, char* element, unsigned short elementSize, unsigned short shiftStart);
+int insert(file* file, unsigned short element_Size);
 
 /// Part of Variable Declaration ------------------------------------------------------------------------------------------
 
