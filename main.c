@@ -74,7 +74,7 @@ int main(int argc, char const *argv[]) {
                 
                 switch(answer){
                     case 1:
-                        DeleteElementPhysique(&file);
+                        DeleteElementPhysique(&file, file.RFile);
                         break;
 
                     case 2:
